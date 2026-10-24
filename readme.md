@@ -13,6 +13,11 @@ Minecraft 26.2 and 26.3 (one jar per version).
 Open Mod Menu, find Huddable and press Configure. In a world the live HUD shows through the editor; on the title
 screen each element is drawn as a labelled box.
 
+The editor's buttons are in a small window on the left edge. Drag its title strip to move it out of the way of
+whatever you're placing; it stays where you left it until the game closes.
+
+- **Elements:** a list of every HUD element. Click one to hide or show it (hidden ones are struck through), or
+  press Show all.
 - **Move:** drag an element. It snaps to the screen edges and centre and to other elements' edges and centres
   (cyan guide lines); hold Shift to place it freely.
 - **Scale:** drag one of an element's gold corner handles (25% to 400%).
@@ -39,7 +44,7 @@ Hunger and air bars drain from the left like vanilla's icons. The styles appear 
 bar (armor only with armor on, air only underwater or while it refills).
 
 ## Profiles
-The button on the left of the toolbar shows the active profile; click it to switch to the next one.
+The top button in the editor's window shows the active profile; click it to switch to the next one.
 - **New:** an empty (vanilla) profile.
 - **Rename:** type a name, then OK.
 - **Delete:** press twice.

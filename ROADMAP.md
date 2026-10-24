@@ -7,6 +7,8 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - Every vanilla HUD element wrapped through Fabric's `HudElementRegistry` (no mixins): move, scale, hide.
 - Health, hunger, armor and air styles: Bar, Number, Icon + number, with colours.
 - Editor screen from Mod Menu: drag, snap, corner scale, right-click options panel, title-screen placeholder mode.
+- 0.1.1: the controls are a draggable window (they covered the boss bar), plus an Elements list to show or hide
+  every element.
 - Profiles with switch, new, rename, delete, and `HUD1:` clipboard export/import.
 - Builds for 26.2 and 26.3; the dev client starts and registers every wrapper without errors.
 

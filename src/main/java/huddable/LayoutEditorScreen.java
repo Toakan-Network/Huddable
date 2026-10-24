@@ -2,6 +2,7 @@ package huddable;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -16,6 +17,8 @@ import net.minecraft.util.Util;
  * (it snaps to the screen edges and centre and to other elements; Shift places it freely), drag a corner to
  * scale it, right-click it for its options (hide, style, colour). On the title screen the elements are drawn as
  * labelled boxes. Changes show at once; Done saves them to the active profile, Cancel or Esc drops them.
+ * The controls are a small window (left edge by default) that drags by its title, so nothing on the HUD is out
+ * of reach; Elements opens a list to show or hide every element.
  * Profile actions (switch, new, rename, delete, import) save the current edits first.
  */
 public class LayoutEditorScreen extends Screen {
@@ -24,7 +27,12 @@ public class LayoutEditorScreen extends Screen {
     private static final int HEADER_BORDER = 0xFF555555;
     private static final int PANEL_BG = 0xE0181818;
     private static final int SNAP_GUIDE = 0xFF55FFFF;
-    private static final int BAR_HEIGHT = 22;
+    /** The controls are a small window, so they never cover HUD elements the player wants to grab. */
+    private static final int TOOLBAR_WIDTH = 72;
+    /** Title strip at the top of the controls; drag it to move them. */
+    private static final int GRIP = 12;
+    private static final int TOOLBAR_BUTTONS = 10;
+    private static final int TOOLBAR_HEIGHT = GRIP + TOOLBAR_BUTTONS * 22 + 2;
     private static final int HANDLE = 6;
     private static final int PANEL_WIDTH = 130;
     private static final int ROW = 22;
@@ -52,7 +60,14 @@ public class LayoutEditorScreen extends Screen {
     private boolean confirmDelete;
     private String status;
     private long statusUntil;
-    private int panelX, panelY, panelHeight;
+    private int panelX, panelY, panelWidth, panelHeight;
+    /** The Elements panel: every element with a show/hide toggle. */
+    private boolean showList;
+    /** Where the controls were left, kept while the game runs; -1 = default (left edge, halfway down). */
+    private static int toolbarX = -1;
+    private static int toolbarY = -1;
+    private boolean movingToolbar;
+    private int grabX, grabY;
 
     public LayoutEditorScreen(Screen parent) {
         super(Component.literal("Huddable"));
@@ -70,43 +85,95 @@ public class LayoutEditorScreen extends Screen {
 
     @Override
     protected void init() {
-        // Ten units: the profile button is two wide, then New, Rename, Delete, Export, Import, Reset, Cancel, Done.
-        int unit = Math.clamp((width - 8) / 10, 30, 70);
-        int x = 4;
+        // A rebuild (resize, toolbar moved) keeps a half-typed name.
+        String draft = renaming && nameBox != null ? nameBox.getValue() : Profiles.activeName();
+        if (toolbarX < 0) {
+            toolbarX = 4;
+            toolbarY = (height - TOOLBAR_HEIGHT) / 2;
+        }
+        toolbarX = Math.clamp(toolbarX, 0, Math.max(0, width - TOOLBAR_WIDTH));
+        toolbarY = Math.clamp(toolbarY, 0, Math.max(0, height - TOOLBAR_HEIGHT));
+        int x = toolbarX + 2;
+        int y = toolbarY + GRIP;
         if (renaming) {
-            nameBox = new EditBox(font, x, 2, 2 * unit - 2, 18, Component.literal("Profile name"));
+            nameBox = new EditBox(font, x + 1, y + 1, TOOLBAR_WIDTH - 6, 18, Component.literal("Profile name"));
             nameBox.setMaxLength(32);
-            nameBox.setValue(Profiles.activeName());
+            nameBox.setValue(draft);
             addRenderableWidget(nameBox);
             setInitialFocus(nameBox);
         } else {
             addRenderableWidget(Button.builder(Component.literal(Profiles.activeName()), b -> nextProfile())
-                .tooltip(Tooltip.create(Component.literal("Profile: click to switch"))).bounds(x, 1, 2 * unit - 2, 20).build());
+                .tooltip(Tooltip.create(Component.literal("Profile " + Profiles.activeName() + ": click to switch")))
+                .bounds(x, y, TOOLBAR_WIDTH - 4, 20).build());
         }
-        x += 2 * unit;
-        x = toolbarButton(x, unit, "New", "A new empty profile", this::newProfile);
-        x = toolbarButton(x, unit, renaming ? "OK" : "Rename", "Rename this profile", this::rename);
-        x = toolbarButton(x, unit, confirmDelete ? "Sure?" : "Delete", "Delete this profile", this::delete);
-        x = toolbarButton(x, unit, "Export", "Copy this layout to the clipboard as a code", this::exportLayout);
-        x = toolbarButton(x, unit, "Import", "Load a layout code from the clipboard as a new profile", this::importLayout);
-        x = toolbarButton(x, unit, "Reset", "Put every element back to vanilla", this::resetAll);
-        x = toolbarButton(x, unit, "Cancel", "Close without saving", this::onClose);
-        toolbarButton(x, unit, "Done", "Save and close", this::done);
-        if (selected != null) buildPanel();
+        y += ROW;
+        y = toolbarButton(x, y, "Elements", "Show or hide HUD elements from a list", () -> {
+            showList = !showList;
+            selected = null;
+            rebuildWidgets();
+        });
+        y = toolbarButton(x, y, "New", "A new empty profile", this::newProfile);
+        y = toolbarButton(x, y, renaming ? "OK" : "Rename", "Rename this profile", this::rename);
+        y = toolbarButton(x, y, confirmDelete ? "Sure?" : "Delete", "Delete this profile", this::delete);
+        y = toolbarButton(x, y, "Export", "Copy this layout to the clipboard as a code", this::exportLayout);
+        y = toolbarButton(x, y, "Import", "Load a layout code from the clipboard as a new profile", this::importLayout);
+        y = toolbarButton(x, y, "Reset", "Put every element back to vanilla", this::resetAll);
+        y = toolbarButton(x, y, "Cancel", "Close without saving", this::onClose);
+        toolbarButton(x, y, "Done", "Save and close", this::done);
+        if (showList) buildList();
+        else if (selected != null) buildPanel();
     }
 
-    private int toolbarButton(int x, int unit, String label, String tip, Runnable action) {
+    private int toolbarButton(int x, int y, String label, String tip, Runnable action) {
         addRenderableWidget(Button.builder(Component.literal(label), b -> action.run())
-            .tooltip(Tooltip.create(Component.literal(tip))).bounds(x, 1, unit - 2, 20).build());
-        return x + unit;
+            .tooltip(Tooltip.create(Component.literal(tip))).bounds(x, y, TOOLBAR_WIDTH - 4, 20).build());
+        return y + ROW;
     }
 
-    /** The options panel for {@link #selected}, on the side of the screen away from it. */
+    /** Puts a panel of {@code w} beside the controls, on whichever side has room. */
+    private void placePanel(int w) {
+        panelWidth = w;
+        panelX = toolbarX + TOOLBAR_WIDTH + w + 2 <= width ? toolbarX + TOOLBAR_WIDTH + 2 : toolbarX - w - 2;
+        panelY = toolbarY;
+    }
+
+    /** Every element in two columns; a click shows or hides it. Hidden ones are struck through. */
+    private void buildList() {
+        int columnWidth = 100;
+        int rows = (Element.values().length + 1) / 2;
+        placePanel(2 * columnWidth + 10);
+        for (int i = 0; i < Element.values().length; i++) {
+            Element element = Element.values()[i];
+            boolean hidden = working.get(element).hidden;
+            Component label = hidden
+                ? Component.literal(element.label).withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.STRIKETHROUGH)
+                : Component.literal(element.label);
+            int x = panelX + 4 + (i / rows) * (columnWidth + 2);
+            int y = panelY + 16 + (i % rows) * ROW;
+            addRenderableWidget(Button.builder(label, b -> {
+                working.edit(element).hidden = !hidden;
+                rebuildWidgets();
+            }).tooltip(Tooltip.create(Component.literal(hidden ? "Hidden: click to show" : "Shown: click to hide")))
+                .bounds(x, y, columnWidth, 20).build());
+        }
+        int y = panelY + 16 + rows * ROW;
+        addRenderableWidget(Button.builder(Component.literal("Show all"), b -> {
+            for (Element element : Element.values()) {
+                if (working.get(element).hidden) working.edit(element).hidden = false;
+            }
+            rebuildWidgets();
+        }).bounds(panelX + 4, y, columnWidth, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Close"), b -> {
+            showList = false;
+            rebuildWidgets();
+        }).bounds(panelX + 6 + columnWidth, y, columnWidth, 20).build());
+        panelHeight = y + ROW - panelY;
+    }
+
+    /** The options panel for {@link #selected}, beside the controls. */
     private void buildPanel() {
         ElementLayout l = working.get(selected);
-        HudWrapper.Box box = boxOf(selected);
-        panelX = box.x() + box.width() / 2 < width / 2 ? width - PANEL_WIDTH - 4 : 4;
-        panelY = BAR_HEIGHT + 4;
+        placePanel(PANEL_WIDTH);
         int x = panelX + 4;
         int w = PANEL_WIDTH - 8;
         int y = panelY + 16;
@@ -263,7 +330,7 @@ public class LayoutEditorScreen extends Screen {
             }
             if (!live || focus || element == hovered || l.hidden) {
                 String label = element.label + (l.hidden ? " (hidden)" : "");
-                int labelY = b.y() >= BAR_HEIGHT + 10 ? b.y() - 10 : b.y() + b.height() + 2;
+                int labelY = b.y() >= 10 ? b.y() - 10 : b.y() + b.height() + 2;
                 context.text(font, label, b.x(), labelY, 0xFFFFFFFF, true);
             }
         }
@@ -272,18 +339,26 @@ public class LayoutEditorScreen extends Screen {
             if (guideY >= 0) context.fill(0, guideY, width, guideY + 1, SNAP_GUIDE);
         }
 
-        context.fill(0, 0, width, BAR_HEIGHT, HEADER_BG);
-        context.outline(0, 0, width, BAR_HEIGHT, HEADER_BORDER);
+        context.fill(toolbarX, toolbarY, toolbarX + TOOLBAR_WIDTH, toolbarY + TOOLBAR_HEIGHT, HEADER_BG);
+        context.outline(toolbarX, toolbarY, TOOLBAR_WIDTH, TOOLBAR_HEIGHT, movingToolbar ? 0xFFFFDD00 : HEADER_BORDER);
+        context.text(font, "Huddable", toolbarX + 4, toolbarY + 2, GOLD, false);
+        // Grip dots: the title strip drags the controls.
+        context.fill(toolbarX + TOOLBAR_WIDTH - 12, toolbarY + 4, toolbarX + TOOLBAR_WIDTH - 4, toolbarY + 5, 0xFF888888);
+        context.fill(toolbarX + TOOLBAR_WIDTH - 12, toolbarY + 7, toolbarX + TOOLBAR_WIDTH - 4, toolbarY + 8, 0xFF888888);
         String hint = live
-            ? "Drag to move (Shift: no snap), corner to scale, right-click for options"
+            ? "Drag to move (Shift: no snap), corner to scale, right-click for options, Elements to show/hide"
             : "Join a world for a live preview. Drag to move, corner to scale, right-click for options";
         if (status != null && Util.getMillis() < statusUntil) hint = status;
         context.text(font, font.plainSubstrByWidth(hint, width - 8), 4, height - 12, GOLD, true);
 
-        if (selected != null) {
+        if (showList) {
+            context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
+            context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
+            context.text(font, "Vanilla HUD", panelX + 4, panelY + 4, GOLD, false);
+        } else if (selected != null) {
             ElementLayout l = working.get(selected);
-            context.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + panelHeight, PANEL_BG);
-            context.outline(panelX, panelY, PANEL_WIDTH, panelHeight, HEADER_BORDER);
+            context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
+            context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
             context.text(font, selected.label, panelX + 4, panelY + 4, GOLD, false);
             // Values between the -/+ buttons, on the rows buildPanel laid out.
             int y = panelY + 16 + ROW;
@@ -296,7 +371,7 @@ public class LayoutEditorScreen extends Screen {
                 if (l.style != Style.VANILLA) {
                     // Swatch at the right end of the Colour button.
                     int colour = l.color != 0 ? l.color : BarRenderers.defaultColor(selected);
-                    int sx = panelX + PANEL_WIDTH - 4 - 14;
+                    int sx = panelX + panelWidth - 4 - 14;
                     context.outline(sx - 1, y + 5, 10, 10, 0xFF000000);
                     context.fill(sx, y + 6, sx + 8, y + 14, colour);
                     y += ROW;
@@ -311,7 +386,7 @@ public class LayoutEditorScreen extends Screen {
     }
 
     private void centred(GuiGraphicsExtractor context, String text, int rowY) {
-        context.text(font, text, panelX + (PANEL_WIDTH - font.width(text)) / 2, rowY + 6, 0xFFFFFFFF, false);
+        context.text(font, text, panelX + (panelWidth - font.width(text)) / 2, rowY + 6, 0xFFFFFFFF, false);
     }
 
     private static int[][] corners(HudWrapper.Box b) {
@@ -324,7 +399,7 @@ public class LayoutEditorScreen extends Screen {
 
     /** The smallest element box under the mouse, so a small element on top of a big one can still be picked. */
     private Element elementAt(int mouseX, int mouseY) {
-        if (mouseY < BAR_HEIGHT || inPanel(mouseX, mouseY)) return null;
+        if (inToolbar(mouseX, mouseY) || inPanel(mouseX, mouseY)) return null;
         Element best = null;
         long bestArea = Long.MAX_VALUE;
         for (Element element : Element.values()) {
@@ -340,8 +415,12 @@ public class LayoutEditorScreen extends Screen {
         return best;
     }
 
+    private boolean inToolbar(int mouseX, int mouseY) {
+        return mouseX >= toolbarX && mouseX < toolbarX + TOOLBAR_WIDTH && mouseY >= toolbarY && mouseY < toolbarY + TOOLBAR_HEIGHT;
+    }
+
     private boolean inPanel(int mouseX, int mouseY) {
-        return selected != null && mouseX >= panelX && mouseX < panelX + PANEL_WIDTH
+        return (showList || selected != null) && mouseX >= panelX && mouseX < panelX + panelWidth
             && mouseY >= panelY && mouseY < panelY + panelHeight;
     }
 
@@ -350,9 +429,18 @@ public class LayoutEditorScreen extends Screen {
         if (super.mouseClicked(ctx, doubleClick)) return true;
         int mouseX = (int) ctx.x();
         int mouseY = (int) ctx.y();
+        if (inToolbar(mouseX, mouseY)) {
+            if (ctx.button() == mouseLeft && mouseY < toolbarY + GRIP) {
+                movingToolbar = true;
+                grabX = mouseX - toolbarX;
+                grabY = mouseY - toolbarY;
+            }
+            return true;
+        }
         if (inPanel(mouseX, mouseY)) return true;
         Element element = elementAt(mouseX, mouseY);
         if (ctx.button() == mouseRight) {
+            if (element != null) showList = false;
             selected = element;
             rebuildWidgets();
             return true;
@@ -381,6 +469,12 @@ public class LayoutEditorScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent ctx, double deltaX, double deltaY) {
+        if (movingToolbar) {
+            toolbarX = (int) ctx.x() - grabX;
+            toolbarY = (int) ctx.y() - grabY;
+            rebuildWidgets(); // the buttons and panel follow
+            return true;
+        }
         if (active == null) return super.mouseDragged(ctx, deltaX, deltaY);
         int mouseX = (int) ctx.x();
         int mouseY = (int) ctx.y();
@@ -441,6 +535,10 @@ public class LayoutEditorScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent ctx) {
+        if (movingToolbar) {
+            movingToolbar = false;
+            return true;
+        }
         if (active != null) {
             active = null;
             scaling = false;
