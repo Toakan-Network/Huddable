@@ -36,7 +36,7 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	// Mod Menu (optional): its "Configure" button opens the layout editor. Only Mod Menu loads
-	// huddable.compat.ModMenuCompat (fabric.mod.json entrypoint).
+	// uk.toakan.tad.huddable.compat.ModMenuCompat (fabric.mod.json entrypoint).
 	compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}") { transitive = false }
 
 	// Unit tests for the plain logic (snapping, share codes); nothing here ships in the jar.

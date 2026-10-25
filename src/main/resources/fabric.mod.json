@@ -11,10 +11,10 @@
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"huddable.HuddableClient"
+			"uk.toakan.tad.huddable.HuddableClient"
 		],
 		"modmenu": [
-			"huddable.compat.ModMenuCompat"
+			"uk.toakan.tad.huddable.compat.ModMenuCompat"
 		]
 	},
 	"mixins": [

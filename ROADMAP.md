@@ -14,7 +14,7 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - Profiles with switch, new, rename, delete, and `HUD1:` clipboard export/import.
 - Builds for 26.2 and 26.3; the dev client starts and registers every wrapper without errors.
 - 0.2.0: other mods' Fabric HUD layers are found at client start and placed like vanilla ones (measured from
-  what they draw); an opt-in API (`huddable.api`) for elements drawn elsewhere or that resize; edge-grip resize
+  what they draw); an opt-in API (`uk.toakan.tad.huddable.api`) for elements drawn elsewhere or that resize; edge-grip resize
   for chat, Bar-style bars and resizable API elements; per-profile screen scale (GUI / Window / Fixed, Shopping
   List's maths).
 

@@ -120,8 +120,8 @@ Profile actions save your current edits first. Profiles are in `config/huddable/
 ## For mod authors
 Elements added with Fabric's `HudElementRegistry` need nothing: Huddable wraps them. To let Huddable place an
 element drawn some other way, or to let players resize one that lays itself out, register it through
-`huddable.api.HuddableApi` from a `huddable.api.HuddablePlugin` entrypoint. Huddable only loads that class when it
-is installed, so it can stay an optional dependency.
+`uk.toakan.tad.huddable.api.HuddableApi` from a `uk.toakan.tad.huddable.api.HuddablePlugin` entrypoint. Huddable
+only loads that class when it is installed, so it can stay an optional dependency.
 
 ```json
 "entrypoints": {
@@ -155,6 +155,6 @@ if (HuddableApi.push(graphics, PANEL)) {
 }
 ```
 
-or, for a resizable element, read `HuddableApi.placement(PANEL)` (top-left in GUI pixels, width and height in
-your units, the scale to draw at, and whether it's hidden) and lay it out to that. `HuddableApi.openEditor(parent)`
-opens the editor, for your own "Move HUD" button. Only the `huddable.api` package is meant for other mods.
+or, for a resizable element, read `HuddableApi.placement(PANEL)` (top-left in GUI pixels, width and height in your
+units, the scale to draw at, and whether it's hidden) and lay it out to that. `HuddableApi.openEditor(parent)` opens
+the editor, for your own "Move HUD" button. Only the `uk.toakan.tad.huddable.api` package is meant for other mods.
