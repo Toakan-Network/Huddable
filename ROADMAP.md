@@ -13,6 +13,10 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   every element.
 - Profiles with switch, new, rename, delete, and `HUD1:` clipboard export/import.
 - Builds for 26.2 and 26.3; the dev client starts and registers every wrapper without errors.
+- 0.2.0: other mods' Fabric HUD layers are found at client start and placed like vanilla ones (measured from
+  what they draw); an opt-in API (`huddable.api`) for elements drawn elsewhere or that resize; edge-grip resize
+  for chat, Bar-style bars and resizable API elements; per-profile screen scale (GUI / Window / Fixed, Shopping
+  List's maths).
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
@@ -23,8 +27,16 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   the editor against vanilla's (width, line spacing, chat scale). Mods that draw at vanilla's chat position don't
   follow it unless they read chat's pose, as ChatTabs 0.2.0 does.
 - 26.3 in a real client.
+- 0.2.0: which installed mods' layers discovery finds (the log lists them), measured boxes against what they
+  draw, moving and scaling them; the "(not showing)" placeholder; chat edge-resize and Cancel restoring chat's
+  size; Bar edge-resize; the Size modes when the window or GUI Scale changes. The API has no user yet.
 
 ## Next (ElvUI direction)
+- Shopping List on Huddable: register its five panels through the API (resizable), hand its Move HUD to
+  Huddable's editor and ignore its `sandbox_widget` layer. Waiting for Huddable on Modrinth, so Shopping List's CI
+  can compile against `maven.modrinth:huddable`.
+- Fancy Notify: ask its author to register notifications through the API (it draws from its own `Gui` mixin, so
+  discovery can't see it).
 - Custom widgets: text, bars and icons tied to live data (coordinates, FPS, durability, clock, ping).
 - Unit frames: a player frame (health, hunger, armor and XP in one panel) and a target frame for the entity
   under the crosshair.

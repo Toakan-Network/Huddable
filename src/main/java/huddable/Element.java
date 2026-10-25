@@ -26,7 +26,7 @@ import net.minecraft.world.scores.Scoreboard;
  * changes size. The box is only for the editor (hit testing, outlines, snapping); for elements whose size depends
  * on live state it is measured the way vanilla measures it, or a typical size when that state isn't readable.
  */
-public enum Element {
+public enum Element implements HudPart {
     HOTBAR(VanillaHudElements.HOTBAR, "Hotbar", true, false, false),
     HEALTH_BAR(VanillaHudElements.HEALTH_BAR, "Health", true, true, false),
     ARMOR_BAR(VanillaHudElements.ARMOR_BAR, "Armor", true, true, false),
@@ -68,10 +68,52 @@ public enum Element {
         this.rightAligned = rightAligned;
     }
 
-    /** Anchor point plus the unmoved, unscaled box, in GUI pixels. */
-    public record Geometry(int anchorX, int anchorY, int x, int y, int width, int height) {}
+    @Override
+    public String key() {
+        return name();
+    }
+
+    @Override
+    public String label() {
+        return label;
+    }
+
+    @Override
+    public boolean movable() {
+        return movable;
+    }
+
+    @Override
+    public boolean restyleable() {
+        return restyleable;
+    }
+
+    /** Chat sizes itself to vanilla's chat width and height options; a Bar-style status bar to its bar size. */
+    @Override
+    public boolean resizable(ElementLayout layout) {
+        return this == CHAT || restyleable && layout.style == Style.BAR;
+    }
+
+    /**
+     * Chat writes vanilla's chat width and unfocused height options (so chat lays itself out to them), inverting
+     * {@link #chatGeometry}; a bar sets its bar size.
+     */
+    @Override
+    public void resize(Minecraft mc, ElementLayout layout, int width, int height) {
+        if (this == CHAT) {
+            double scale = Math.max(0.05, mc.options.chatScale().get());
+            double chatWidth = (width - 12 * scale - 40) / 280.0;
+            double chatHeight = (height / scale - 20) / 160.0;
+            mc.options.chatWidth().set(Math.clamp(chatWidth, 0.0, 1.0));
+            mc.options.chatHeightUnfocused().set(Math.clamp(chatHeight, 0.0, 1.0));
+        } else {
+            layout.barWidth = Math.clamp(width, ElementLayout.MIN_BAR_WIDTH, ElementLayout.MAX_BAR_WIDTH);
+            layout.barHeight = Math.clamp(height, ElementLayout.MIN_BAR_HEIGHT, ElementLayout.MAX_BAR_HEIGHT);
+        }
+    }
 
     /** Where vanilla draws this element now, for a screen of {@code w} x {@code h} GUI pixels. */
+    @Override
     public Geometry geometry(Minecraft mc, int w, int h) {
         Font font = mc.font;
         Player player = mc.getCameraEntity() instanceof Player p ? p : null;
@@ -139,6 +181,7 @@ public enum Element {
      * Just the anchor, for drawing every frame: skips measuring the elements whose box takes work (effects,
      * scoreboard), as their anchor doesn't depend on it.
      */
+    @Override
     public int[] anchor(Minecraft mc, int w, int h) {
         return switch (this) {
             case MOB_EFFECTS -> new int[] {w, 0};

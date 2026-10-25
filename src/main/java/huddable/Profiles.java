@@ -48,6 +48,11 @@ public final class Profiles {
         preview = layout;
     }
 
+    /** True while the editor is open. */
+    public static boolean editing() {
+        return preview != null;
+    }
+
     public static void load() {
         Settings settings = JsonFiles.read(SETTINGS, Settings.class);
         activeName = settings != null && settings.active != null ? cleanName(settings.active) : DEFAULT_NAME;

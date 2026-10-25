@@ -23,7 +23,8 @@ abstract class ChatComponentMixin {
     private void huddable$moveChat(ChatComponent.ChatGraphicsAccess graphics, int screenHeight, int ticks,
                                    ChatComponent.DisplayMode displayMode, CallbackInfo ci) {
         ElementLayout layout = Profiles.current().get(Element.CHAT);
-        if (layout.dx == 0 && layout.dy == 0 && layout.scale == 100) return;
-        graphics.updatePose(pose -> HudWrapper.transform(pose, Element.CHAT_ANCHOR_X, screenHeight - Element.CHAT_BOTTOM_OFFSET, layout));
+        float scale = HudWrapper.scale(Element.CHAT, layout);
+        if (layout.dx == 0 && layout.dy == 0 && scale == 1f) return;
+        graphics.updatePose(pose -> HudWrapper.transform(pose, Element.CHAT_ANCHOR_X, screenHeight - Element.CHAT_BOTTOM_OFFSET, layout, scale));
     }
 }

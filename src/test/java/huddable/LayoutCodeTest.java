@@ -60,6 +60,39 @@ class LayoutCodeTest {
     }
 
     @Test
+    void otherModsEntriesAreKept() {
+        Layout layout = new Layout();
+        ElementLayout panel = new ElementLayout();
+        panel.dx = 30;
+        panel.width = 150;
+        panel.style = Style.BAR; // other mods' elements can't be restyled
+        layout.elements.put("skyblock-shopping-list:panel/main", panel);
+        layout.elements.put("NOT_AN_ELEMENT", new ElementLayout());
+        layout.elements.get("NOT_AN_ELEMENT").dx = 5;
+        layout.sizing = Sizing.WINDOW;
+
+        Layout back = Layout.fromCode(layout.toCode());
+
+        ElementLayout p = back.elements.get("skyblock-shopping-list:panel/main");
+        assertEquals(30, p.dx);
+        assertEquals(150, p.width);
+        assertEquals(Style.VANILLA, p.style);
+        assertFalse(back.elements.containsKey("NOT_AN_ELEMENT"));
+        assertEquals(Sizing.WINDOW, back.sizing);
+    }
+
+    @Test
+    void sizingMatchesShoppingList() {
+        // Shopping List's SandboxWidget.scaleFactor(): GUI_SCALE 1, FIXED 2 / guiScale, WINDOW 2 * (height / 1080) / guiScale.
+        assertEquals(1f, Sizing.GUI_SCALE.factor(3, 1440));
+        assertEquals(1f, Sizing.FIXED.factor(2, 1080));
+        assertEquals(0.5f, Sizing.FIXED.factor(4, 2160));
+        assertEquals(1f, Sizing.WINDOW.factor(2, 1080));
+        assertEquals(2f * (1440 / 1080f) / 3, Sizing.WINDOW.factor(3, 1440));
+        assertEquals(2f, Sizing.WINDOW.factor(0, 1080)); // GUI Scale "auto" reads as at least 1
+    }
+
+    @Test
     void rejectsOtherCodes() {
         assertNull(Layout.fromCode("SSL1:abc"));
         assertNull(Layout.fromCode("HUD1:not base64!"));

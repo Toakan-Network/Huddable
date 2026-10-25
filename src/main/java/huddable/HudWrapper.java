@@ -12,7 +12,8 @@ import org.joml.Matrix3x2fStack;
 /**
  * Wraps every {@link Element} through Fabric's {@link HudElementRegistry#replaceElement}, so vanilla (and any mod
  * that wrapped it first) still does the drawing: Huddable only shifts and scales the pose around it, skips it when
- * hidden, or draws a {@link BarRenderers} style instead. Chat is the exception: it is moved by
+ * hidden, or draws a {@link BarRenderers} style instead. Other mods' Fabric layers are wrapped the same way by
+ * {@link HudDiscovery}. Chat is the exception: it is moved by
  * {@code mixin.ChatComponentMixin}, as the open chat isn't drawn through the HUD.
  */
 public final class HudWrapper {
@@ -31,7 +32,8 @@ public final class HudWrapper {
         ElementLayout layout = Profiles.current().get(element);
         if (layout.hidden) return;
         // Chat is moved by ChatComponentMixin, which also covers the open chat and its clicks.
-        if (layout.isDefault() || element == Element.CHAT) {
+        float scale = scale(element, layout);
+        if (element == Element.CHAT || layout.isDefault() && scale == 1f) {
             original.extractRenderState(graphics, delta);
             return;
         }
@@ -39,7 +41,7 @@ public final class HudWrapper {
         int[] anchor = element.anchor(mc, graphics.guiWidth(), graphics.guiHeight());
         Matrix3x2fStack pose = graphics.pose();
         pose.pushMatrix();
-        transform(pose, anchor[0], anchor[1], layout);
+        transform(pose, anchor[0], anchor[1], layout, scale);
         if (layout.style == Style.VANILLA) {
             original.extractRenderState(graphics, delta);
         } else if (mc.getCameraEntity() instanceof Player player) {
@@ -49,30 +51,56 @@ public final class HudWrapper {
         pose.popMatrix();
     }
 
+    /** Another mod's Fabric HUD layer ({@link HudDiscovery}): moved and scaled around its measured anchor. */
+    static void renderExternal(ExternalPart part, HudElement original, GuiGraphicsExtractor graphics, DeltaTracker delta) {
+        ElementLayout layout = Profiles.current().get(part);
+        part.measureIfNeeded(graphics, delta, !layout.isDefault());
+        if (layout.hidden) return;
+        float scale = scale(part, layout);
+        if (layout.dx == 0 && layout.dy == 0 && scale == 1f) {
+            original.extractRenderState(graphics, delta);
+            return;
+        }
+        int[] anchor = part.anchor(Minecraft.getInstance(), graphics.guiWidth(), graphics.guiHeight());
+        Matrix3x2fStack pose = graphics.pose();
+        pose.pushMatrix();
+        transform(pose, anchor[0], anchor[1], layout, scale);
+        original.extractRenderState(graphics, delta);
+        pose.popMatrix();
+    }
+
+    /** The scale an element draws at: its own, the layout's and the profile's screen scale together. */
+    public static float scale(HudPart part, ElementLayout layout) {
+        return part.baseScale() * layout.scaleFactor() * Profiles.current().sizing.factor();
+    }
+
     /** Moves the anchor by the layout's offset and scales around it. */
-    public static void transform(Matrix3x2f pose, int anchorX, int anchorY, ElementLayout layout) {
-        float scale = layout.scaleFactor();
+    public static void transform(Matrix3x2f pose, int anchorX, int anchorY, ElementLayout layout, float scale) {
         pose.translate(anchorX + layout.dx, anchorY + layout.dy);
         pose.scale(scale, scale);
         pose.translate(-anchorX, -anchorY);
     }
 
     /** Where the element ends up on screen with {@code layout}, for the editor. */
-    public static Box box(Element element, ElementLayout layout, Minecraft mc, int w, int h) {
-        Element.Geometry g = element.geometry(mc, w, h);
+    public static Box box(HudPart part, ElementLayout layout, Minecraft mc, int w, int h) {
+        HudPart.Geometry g = part.geometry(mc, w, h);
         int x = g.x();
         int y = g.y();
-        int width = g.width();
-        int height = g.height();
-        if (layout.style != Style.VANILLA) {
+        int width;
+        int height;
+        if (part instanceof Element element && layout.style != Style.VANILLA) {
             BarRenderers.Reading reading = mc.getCameraEntity() instanceof Player player ? BarRenderers.read(element, player) : null;
             int[] size = BarRenderers.size(element, layout, mc.font, reading);
             width = size[0];
             height = size[1];
             x = element.rightAligned ? g.anchorX() - width : g.anchorX();
             y = g.anchorY() - height;
+        } else {
+            int[] size = part.size(mc, g, layout);
+            width = size[0];
+            height = size[1];
         }
-        float scale = layout.scaleFactor();
+        float scale = scale(part, layout);
         int left = Math.round(g.anchorX() + layout.dx + (x - g.anchorX()) * scale);
         int top = Math.round(g.anchorY() + layout.dy + (y - g.anchorY()) * scale);
         return new Box(left, top, Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));

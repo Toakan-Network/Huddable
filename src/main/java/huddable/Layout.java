@@ -7,8 +7,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A whole HUD layout: one {@link ElementLayout} per changed element, keyed by the element's enum name. Elements
- * left out draw as vanilla. Gson POJO, saved as one profile file and packed into share codes.
+ * A whole HUD layout: one {@link ElementLayout} per changed element, keyed by {@link HudPart#key()} (the enum name
+ * for vanilla elements, {@code mod:path} for other mods'), plus the screen scale. Elements left out draw as
+ * vanilla. Gson POJO, saved as one profile file and packed into share codes.
  */
 public final class Layout {
     private static final ElementLayout VANILLA = new ElementLayout();
@@ -19,20 +20,21 @@ public final class Layout {
     private static final Gson COMPACT = new Gson();
 
     public Map<String, ElementLayout> elements = new LinkedHashMap<>();
+    public Sizing sizing = Sizing.GUI_SCALE;
 
     /** The element's layout, or a shared vanilla one when it has none; don't change what this returns. */
-    public ElementLayout get(Element element) {
-        ElementLayout l = elements.get(element.name());
+    public ElementLayout get(HudPart part) {
+        ElementLayout l = elements.get(part.key());
         return l != null ? l : VANILLA;
     }
 
     /** The element's own layout, created if missing, for editing. */
-    public ElementLayout edit(Element element) {
-        return elements.computeIfAbsent(element.name(), k -> new ElementLayout());
+    public ElementLayout edit(HudPart part) {
+        return elements.computeIfAbsent(part.key(), k -> new ElementLayout());
     }
 
-    public void reset(Element element) {
-        elements.remove(element.name());
+    public void reset(HudPart part) {
+        elements.remove(part.key());
     }
 
     /** This layout as a {@code HUD1:} share code. */
@@ -55,15 +57,18 @@ public final class Layout {
     public Layout copy() {
         Layout c = new Layout();
         elements.forEach((k, v) -> c.elements.put(k, v.copy()));
+        c.sizing = sizing;
         return c;
     }
 
     /**
-     * Makes a loaded or imported layout safe to draw: unknown element names and vanilla-looking entries are
-     * dropped, and every value is put in range.
+     * Makes a loaded or imported layout safe to draw: unknown vanilla element names and vanilla-looking entries
+     * are dropped, and every value is put in range. Other mods' entries ({@code mod:path}) are kept even when
+     * that mod isn't loaded, so removing a mod doesn't lose where its elements were.
      */
     public Layout clamp() {
         if (elements == null) elements = new LinkedHashMap<>();
+        if (sizing == null) sizing = Sizing.GUI_SCALE;
         Map<String, ElementLayout> kept = new LinkedHashMap<>();
         for (Element element : Element.values()) {
             ElementLayout l = elements.get(element.name());
@@ -71,6 +76,11 @@ public final class Layout {
             l.clamp(element);
             if (!l.isDefault()) kept.put(element.name(), l);
         }
+        elements.forEach((key, l) -> {
+            if (l == null || !key.contains(":")) return;
+            l.clamp(false, true);
+            if (!l.isDefault()) kept.put(key, l);
+        });
         elements = kept;
         return this;
     }

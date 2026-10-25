@@ -3,6 +3,8 @@ package huddable;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -15,8 +17,10 @@ import net.minecraft.util.Util;
 /**
  * The layout editor, opened from Mod Menu. In a world the live HUD shows through it: drag an element to move it
  * (it snaps to the screen edges and centre and to other elements; Shift places it freely), drag a corner to
- * scale it, right-click it for its options (hide, style, colour). On the title screen the elements are drawn as
- * labelled boxes. Changes show at once; Done saves them to the active profile, Cancel or Esc drops them.
+ * scale it, drag an edge grip to resize it (chat, Bar-style bars, and other mods' elements that lay themselves
+ * out), right-click it for its options (hide, style, colour). Other mods' elements ({@link Parts}) are placed the
+ * same way. On the title screen the elements are drawn as labelled boxes. Changes show at once; Done saves them
+ * to the active profile, Cancel or Esc drops them (chat's size, a vanilla option, is put back too).
  * The controls are a small window (left edge by default) that drags by its title, so nothing on the HUD is out
  * of reach; Elements opens a list to show or hide every element.
  * Profile actions (switch, new, rename, delete, import) save the current edits first.
@@ -31,7 +35,7 @@ public class LayoutEditorScreen extends Screen {
     private static final int TOOLBAR_WIDTH = 72;
     /** Title strip at the top of the controls; drag it to move them. */
     private static final int GRIP = 12;
-    private static final int TOOLBAR_BUTTONS = 10;
+    private static final int TOOLBAR_BUTTONS = 11;
     private static final int TOOLBAR_HEIGHT = GRIP + TOOLBAR_BUTTONS * 22 + 2;
     private static final int HANDLE = 6;
     private static final int PANEL_WIDTH = 130;
@@ -47,10 +51,12 @@ public class LayoutEditorScreen extends Screen {
     private final int mouseRight = HuddableClient.inputCode("MOUSE_BUTTON_RIGHT");
     private Layout working;
     /** The element whose options panel is open, or null. */
-    private Element selected;
-    /** The element being dragged or scaled, or null. */
-    private Element active;
+    private HudPart selected;
+    /** The element being dragged, scaled or resized, or null. */
+    private HudPart active;
     private boolean scaling;
+    /** The edge grip being dragged, or null when moving or scaling. */
+    private Edge resizing;
     private int startMouseX, startMouseY, startDx, startDy, startScale;
     private HudWrapper.Box startBox;
     private int guideX = -1;
@@ -68,10 +74,19 @@ public class LayoutEditorScreen extends Screen {
     private static int toolbarY = -1;
     private boolean movingToolbar;
     private int grabX, grabY;
+    /** Chat's size options when the editor opened, put back on Cancel; chat resizes through them. */
+    private final double chatWidth;
+    private final double chatHeight;
+
+    /** Mid-edge resize grips. */
+    private enum Edge { LEFT, RIGHT, TOP, BOTTOM }
 
     public LayoutEditorScreen(Screen parent) {
         super(Component.literal("Huddable"));
         this.parent = parent;
+        Options options = Minecraft.getInstance().options;
+        chatWidth = options.chatWidth().get();
+        chatHeight = options.chatHeightUnfocused().get();
         loadWorking();
     }
 
@@ -112,6 +127,12 @@ public class LayoutEditorScreen extends Screen {
             selected = null;
             rebuildWidgets();
         });
+        y = toolbarButton(x, y, "Size: " + working.sizing.label,
+            "How the whole HUD's size follows the screen. GUI: Minecraft's GUI Scale. Window: grows and shrinks "
+                + "with the window. Fixed: the same size at any GUI Scale", () -> {
+            working.sizing = working.sizing.next();
+            rebuildWidgets();
+        });
         y = toolbarButton(x, y, "New", "A new empty profile", this::newProfile);
         y = toolbarButton(x, y, renaming ? "OK" : "Rename", "Rename this profile", this::rename);
         y = toolbarButton(x, y, confirmDelete ? "Sure?" : "Delete", "Delete this profile", this::delete);
@@ -140,25 +161,27 @@ public class LayoutEditorScreen extends Screen {
     /** Every element in two columns; a click shows or hides it. Hidden ones are struck through. */
     private void buildList() {
         int columnWidth = 100;
-        int rows = (Element.values().length + 1) / 2;
+        List<HudPart> parts = Parts.all();
+        int rows = (parts.size() + 1) / 2;
         placePanel(2 * columnWidth + 10);
-        for (int i = 0; i < Element.values().length; i++) {
-            Element element = Element.values()[i];
+        for (int i = 0; i < parts.size(); i++) {
+            HudPart element = parts.get(i);
             boolean hidden = working.get(element).hidden;
+            String name = font.plainSubstrByWidth(element.label(), columnWidth - 8);
             Component label = hidden
-                ? Component.literal(element.label).withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.STRIKETHROUGH)
-                : Component.literal(element.label);
+                ? Component.literal(name).withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.STRIKETHROUGH)
+                : Component.literal(name);
             int x = panelX + 4 + (i / rows) * (columnWidth + 2);
             int y = panelY + 16 + (i % rows) * ROW;
             addRenderableWidget(Button.builder(label, b -> {
                 working.edit(element).hidden = !hidden;
                 rebuildWidgets();
-            }).tooltip(Tooltip.create(Component.literal(hidden ? "Hidden: click to show" : "Shown: click to hide")))
+            }).tooltip(Tooltip.create(Component.literal(element.label() + (hidden ? "\nHidden: click to show" : "\nShown: click to hide"))))
                 .bounds(x, y, columnWidth, 20).build());
         }
         int y = panelY + 16 + rows * ROW;
         addRenderableWidget(Button.builder(Component.literal("Show all"), b -> {
-            for (Element element : Element.values()) {
+            for (HudPart element : Parts.all()) {
                 if (working.get(element).hidden) working.edit(element).hidden = false;
             }
             rebuildWidgets();
@@ -178,12 +201,12 @@ public class LayoutEditorScreen extends Screen {
         int w = PANEL_WIDTH - 8;
         int y = panelY + 16;
         y = panelButton(x, y, w, l.hidden ? "Show" : "Hide", () -> working.edit(selected).hidden = !l.hidden);
-        if (selected.movable) {
+        if (selected.movable()) {
             addRenderableWidget(Button.builder(Component.literal("-"), b -> changeScale(-SCALE_STEP)).bounds(x, y, 20, 20).build());
             addRenderableWidget(Button.builder(Component.literal("+"), b -> changeScale(SCALE_STEP)).bounds(x + w - 20, y, 20, 20).build());
             y += ROW;
         }
-        if (selected.restyleable) {
+        if (selected.restyleable()) {
             y = panelButton(x, y, w, "Style: " + l.style.label, () -> working.edit(selected).style = l.style.next());
             if (l.style != Style.VANILLA) y = panelButton(x, y, w, "Colour", this::nextColour);
             if (l.style == Style.BAR) {
@@ -288,13 +311,19 @@ public class LayoutEditorScreen extends Screen {
 
     private void resetAll() {
         working.elements.clear();
+        working.sizing = Sizing.GUI_SCALE;
         selected = null;
         rebuildWidgets();
     }
 
     private void done() {
         saveWorking();
+        if (chatResized()) minecraft.options.save();
         close();
+    }
+
+    private boolean chatResized() {
+        return minecraft.options.chatWidth().get() != chatWidth || minecraft.options.chatHeightUnfocused().get() != chatHeight;
     }
 
     private void setStatus(String message) {
@@ -304,7 +333,7 @@ public class LayoutEditorScreen extends Screen {
 
     // ---- Drawing ----
 
-    private HudWrapper.Box boxOf(Element element) {
+    private HudWrapper.Box boxOf(HudPart element) {
         return HudWrapper.box(element, working.get(element), minecraft, width, height);
     }
 
@@ -316,8 +345,8 @@ public class LayoutEditorScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         boolean live = minecraft.level != null;
         context.fill(0, 0, width, height, live ? 0x30000000 : 0xC0101010);
-        Element hovered = active != null ? active : elementAt(mouseX, mouseY);
-        for (Element element : Element.values()) {
+        HudPart hovered = active != null ? active : elementAt(mouseX, mouseY);
+        for (HudPart element : Parts.all()) {
             ElementLayout l = working.get(element);
             HudWrapper.Box b = boxOf(element);
             if (!live) context.fill(b.x(), b.y(), b.x() + b.width(), b.y() + b.height(), 0x60406080);
@@ -325,16 +354,23 @@ public class LayoutEditorScreen extends Screen {
             boolean focus = element == selected || element == active;
             int outline = focus ? 0xFFFFDD00 : l.hidden ? 0xFFFF5555 : element == hovered ? 0xFFFFFFFF : 0x66FFFFFF;
             context.outline(b.x(), b.y(), b.width(), b.height(), outline);
-            if (element.movable && (focus || element == hovered)) {
+            if (element.movable() && (focus || element == hovered)) {
                 for (int[] c : corners(b)) context.fill(c[0] - HANDLE / 2, c[1] - HANDLE / 2, c[0] + HANDLE / 2, c[1] + HANDLE / 2, GOLD);
+                // White grips mid-edge (resize), gold squares on the corners (scale).
+                if (element.resizable(l)) {
+                    for (Edge edge : Edge.values()) {
+                        int[] g = grip(b, edge);
+                        context.fill(g[0] - HANDLE / 2, g[1] - HANDLE / 2, g[0] + HANDLE / 2, g[1] + HANDLE / 2, 0xFFFFFFFF);
+                    }
+                }
             }
             if (!live || focus || element == hovered || l.hidden) {
-                String label = element.label + (l.hidden ? " (hidden)" : "");
+                String label = element.label() + (l.hidden ? " (hidden)" : "");
                 int labelY = b.y() >= 10 ? b.y() - 10 : b.y() + b.height() + 2;
                 context.text(font, label, b.x(), labelY, 0xFFFFFFFF, true);
             }
         }
-        if (active != null && !scaling) {
+        if (active != null && !scaling && resizing == null) {
             if (guideX >= 0) context.fill(guideX, 0, guideX + 1, height, SNAP_GUIDE);
             if (guideY >= 0) context.fill(0, guideY, width, guideY + 1, SNAP_GUIDE);
         }
@@ -346,31 +382,31 @@ public class LayoutEditorScreen extends Screen {
         context.fill(toolbarX + TOOLBAR_WIDTH - 12, toolbarY + 4, toolbarX + TOOLBAR_WIDTH - 4, toolbarY + 5, 0xFF888888);
         context.fill(toolbarX + TOOLBAR_WIDTH - 12, toolbarY + 7, toolbarX + TOOLBAR_WIDTH - 4, toolbarY + 8, 0xFF888888);
         String hint = live
-            ? "Drag to move (Shift: no snap), corner to scale, right-click for options, Elements to show/hide"
-            : "Join a world for a live preview. Drag to move, corner to scale, right-click for options";
+            ? "Drag to move (Shift: no snap), corner to scale, edge to resize, right-click for options, Elements to show/hide"
+            : "Join a world for a live preview. Drag to move, corner to scale, edge to resize, right-click for options";
         if (status != null && Util.getMillis() < statusUntil) hint = status;
         context.text(font, font.plainSubstrByWidth(hint, width - 8), 4, height - 12, GOLD, true);
 
         if (showList) {
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
             context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
-            context.text(font, "Vanilla HUD", panelX + 4, panelY + 4, GOLD, false);
+            context.text(font, "HUD elements", panelX + 4, panelY + 4, GOLD, false);
         } else if (selected != null) {
             ElementLayout l = working.get(selected);
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
             context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
-            context.text(font, selected.label, panelX + 4, panelY + 4, GOLD, false);
+            context.text(font, font.plainSubstrByWidth(selected.label(), panelWidth - 8), panelX + 4, panelY + 4, GOLD, false);
             // Values between the -/+ buttons, on the rows buildPanel laid out.
             int y = panelY + 16 + ROW;
-            if (selected.movable) {
+            if (selected.movable()) {
                 centred(context, "Scale " + l.scale + "%", y);
                 y += ROW;
             }
-            if (selected.restyleable) {
+            if (selected.restyleable()) {
                 y += ROW; // the Style row
                 if (l.style != Style.VANILLA) {
                     // Swatch at the right end of the Colour button.
-                    int colour = l.color != 0 ? l.color : BarRenderers.defaultColor(selected);
+                    int colour = l.color != 0 ? l.color : BarRenderers.defaultColor((Element) selected);
                     int sx = panelX + panelWidth - 4 - 14;
                     context.outline(sx - 1, y + 5, 10, 10, 0xFF000000);
                     context.fill(sx, y + 6, sx + 8, y + 14, colour);
@@ -395,14 +431,29 @@ public class LayoutEditorScreen extends Screen {
         return new int[][] {{b.x(), b.y()}, {r, b.y()}, {b.x(), bottom}, {r, bottom}};
     }
 
+    private static int[] grip(HudWrapper.Box b, Edge edge) {
+        int midX = b.x() + b.width() / 2;
+        int midY = b.y() + b.height() / 2;
+        return switch (edge) {
+            case LEFT -> new int[] {b.x(), midY};
+            case RIGHT -> new int[] {b.x() + b.width(), midY};
+            case TOP -> new int[] {midX, b.y()};
+            case BOTTOM -> new int[] {midX, b.y() + b.height()};
+        };
+    }
+
+    private static boolean near(int mouseX, int mouseY, int[] point) {
+        return Math.abs(mouseX - point[0]) <= HANDLE / 2 && Math.abs(mouseY - point[1]) <= HANDLE / 2;
+    }
+
     // ---- Mouse ----
 
     /** The smallest element box under the mouse, so a small element on top of a big one can still be picked. */
-    private Element elementAt(int mouseX, int mouseY) {
+    private HudPart elementAt(int mouseX, int mouseY) {
         if (inToolbar(mouseX, mouseY) || inPanel(mouseX, mouseY)) return null;
-        Element best = null;
+        HudPart best = null;
         long bestArea = Long.MAX_VALUE;
-        for (Element element : Element.values()) {
+        for (HudPart element : Parts.all()) {
             HudWrapper.Box b = boxOf(element);
             boolean inside = mouseX >= b.x() - HANDLE / 2 && mouseX <= b.x() + b.width() + HANDLE / 2
                 && mouseY >= b.y() - HANDLE / 2 && mouseY <= b.y() + b.height() + HANDLE / 2;
@@ -438,7 +489,7 @@ public class LayoutEditorScreen extends Screen {
             return true;
         }
         if (inPanel(mouseX, mouseY)) return true;
-        Element element = elementAt(mouseX, mouseY);
+        HudPart element = elementAt(mouseX, mouseY);
         if (ctx.button() == mouseRight) {
             if (element != null) showList = false;
             selected = element;
@@ -450,13 +501,19 @@ public class LayoutEditorScreen extends Screen {
             selected = element;
             rebuildWidgets();
         }
-        if (!element.movable) return true;
+        if (!element.movable()) return true;
         HudWrapper.Box b = boxOf(element);
         ElementLayout l = working.get(element);
         active = element;
         scaling = false;
+        resizing = null;
         for (int[] c : corners(b)) {
-            if (Math.abs(mouseX - c[0]) <= HANDLE / 2 && Math.abs(mouseY - c[1]) <= HANDLE / 2) scaling = true;
+            if (near(mouseX, mouseY, c)) scaling = true;
+        }
+        if (!scaling && element.resizable(l)) {
+            for (Edge edge : Edge.values()) {
+                if (near(mouseX, mouseY, grip(b, edge))) resizing = edge;
+            }
         }
         startMouseX = mouseX;
         startMouseY = mouseY;
@@ -479,7 +536,9 @@ public class LayoutEditorScreen extends Screen {
         int mouseX = (int) ctx.x();
         int mouseY = (int) ctx.y();
         ElementLayout l = working.edit(active);
-        if (scaling) {
+        if (resizing != null) {
+            resize(l, mouseX, mouseY);
+        } else if (scaling) {
             // Grow by how far the mouse moved away from the box centre on both axes, averaged.
             int centreX = startBox.x() + startBox.width() / 2;
             int centreY = startBox.y() + startBox.height() / 2;
@@ -506,11 +565,35 @@ public class LayoutEditorScreen extends Screen {
         return true;
     }
 
+    /**
+     * Edge drag: the element's unscaled size grows by how far the grip moved (in its own units), and the opposite
+     * edge stays where it was.
+     */
+    private void resize(ElementLayout l, int mouseX, int mouseY) {
+        float scale = HudWrapper.scale(active, l);
+        boolean horizontal = resizing == Edge.LEFT || resizing == Edge.RIGHT;
+        int outward = horizontal
+            ? (mouseX - startMouseX) * (resizing == Edge.LEFT ? -1 : 1)
+            : (mouseY - startMouseY) * (resizing == Edge.TOP ? -1 : 1);
+        int startWidth = Math.round(startBox.width() / scale);
+        int startHeight = Math.round(startBox.height() / scale);
+        int grow = Math.round(outward / scale);
+        active.resize(minecraft, l, horizontal ? Math.max(1, startWidth + grow) : startWidth,
+            horizontal ? startHeight : Math.max(1, startHeight + grow));
+        HudWrapper.Box b = boxOf(active);
+        switch (resizing) {
+            case LEFT -> l.dx += startBox.x() + startBox.width() - (b.x() + b.width());
+            case RIGHT -> l.dx += startBox.x() - b.x();
+            case TOP -> l.dy += startBox.y() + startBox.height() - (b.y() + b.height());
+            case BOTTOM -> l.dy += startBox.y() - b.y();
+        }
+    }
+
     /** Snap lines on one axis: screen edges and centre, and every other element's edges and centre. */
-    private int[] lines(Element moving, boolean horizontal) {
+    private int[] lines(HudPart moving, boolean horizontal) {
         int size = horizontal ? width : height;
         List<Integer> lines = new ArrayList<>(List.of(0, size / 2, size));
-        for (Element element : Element.values()) {
+        for (HudPart element : Parts.all()) {
             if (element == moving || working.get(element).hidden) continue;
             HudWrapper.Box b = boxOf(element);
             int start = horizontal ? b.x() : b.y();
@@ -523,7 +606,7 @@ public class LayoutEditorScreen extends Screen {
     }
 
     /** Pulls the element back inside the screen if a move or scale pushed it past an edge. */
-    private void keepOnScreen(Element element) {
+    private void keepOnScreen(HudPart element) {
         ElementLayout l = working.edit(element);
         HudWrapper.Box b = boxOf(element);
         if (b.x() + b.width() > width) l.dx -= b.x() + b.width() - width;
@@ -542,6 +625,7 @@ public class LayoutEditorScreen extends Screen {
         if (active != null) {
             active = null;
             scaling = false;
+            resizing = null;
             guideX = -1;
             guideY = -1;
             return true;
@@ -554,9 +638,13 @@ public class LayoutEditorScreen extends Screen {
         return false;
     }
 
-    /** Cancel and Esc: the edits are dropped (the preview ends in {@link #removed}). */
+    /** Cancel and Esc: the edits are dropped (the preview ends in {@link #removed}), and chat's size put back. */
     @Override
     public void onClose() {
+        if (chatResized()) {
+            minecraft.options.chatWidth().set(chatWidth);
+            minecraft.options.chatHeightUnfocused().set(chatHeight);
+        }
         close();
     }
 

@@ -19,6 +19,14 @@ update it in the same commit when a step lands or an issue is found or fixed.
   without a reason like this.
 - Positions are offsets from each element's vanilla anchor (`Element.geometry`), so layouts follow screen size
   and GUI scale. Element boxes are for the editor only; keep the per-frame path (`Element.anchor`) cheap.
+- Everything placeable is a `HudPart`: the `Element` enum, or `ExternalPart` for other mods (listed by `Parts`,
+  stored under `mod:path` keys that `Layout.clamp` keeps even when the mod is gone).
+- `HudDiscovery` reads Fabric's internal `HudElementRegistryImpl.ROOT_ELEMENTS`, read-only, because the public
+  API can't list layers (Fabric's own status bar height code reads it the same way). Keep it in its try/catch so
+  an internals change only turns discovery off; wrap through the public `replaceElement` only. Discovered layers
+  are measured by drawing them into a scratch `GuiRenderState`: only when the screen size changes, while the
+  editor is open, or (once a second) while an edited layer hasn't drawn yet.
+- `huddable.api` is the only package other mods may use; keep its signatures to its own and vanilla types.
 - Fabric HUD API sources for checking names are in `..\.mc-sources\fabric-rendering-v1\<mc>\`; vanilla in
   `..\.mc-sources\<mc>\`.
 - Dependencies: Fabric API only. Mod Menu is optional (`compileOnly`, `suggests`) and is the only way to open the
