@@ -18,6 +18,12 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   for chat, Bar-style bars and resizable API elements; per-profile screen scale (GUI / Window / Fixed, Shopping
   List's maths).
 
+- 0.3.0: fonts. A profile font and per-element fonts from the resource packs (every text element, restyled
+  bars), through a wrapper `Font` handed to vanilla's HUD code (`HudFontMixin`) and chat's line styles
+  (`ChatComponentMixin`); a font list in the editor that previews each font; Mod Menu's Configure opens a hub with
+  HUD Designer and General Settings (vanilla options list), whose Font quality sets every TTF font's oversample
+  (`TrueTypeOversampleMixin`, default 4x, reload on leave). The dev client starts with all mixins applied.
+
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
 - Element boxes against what vanilla draws, especially health with extra heart rows, air while riding, effects
@@ -33,6 +39,11 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.2.1: toasts moving, with vanilla toasts and with Fancy Notify (each anchor corner). The dev client starts with
   `GuiToastsMixin` applied.
 
+- 0.3.0: every font element in game with a TTF pack (scoreboard and tab list backgrounds fitting the text,
+  Hypixel icons keeping their font, chat re-wrapping and its clicks/hovers in a new font, restyled bar numbers,
+  toasts), the font list paging, a profile font from a disabled pack falling back, share codes keeping fonts,
+  Font quality reloading once and surviving a restart.
+
 ## Next (ElvUI direction)
 - Shopping List on Huddable: register its five panels through the API (resizable), hand its Move HUD to
   Huddable's editor and ignore its `sandbox_widget` layer. Waiting for Huddable on Modrinth, so Shopping List's CI
@@ -43,7 +54,10 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - Unit frames: a player frame (health, hunger, armor and XP in one panel) and a target frame for the entity
   under the crosshair.
 - A split hotbar: rows or columns, set per slot.
-- A global theme: one font, border, background and colour scheme for every element and widget.
+- A global theme: border, background and colour scheme for every element and widget (the profile font, 0.3.0,
+  is its first part).
+- Fonts for other mods' layers: they read the font themselves, so it needs their support (an API hook).
+- Lang files (en_us.json) for every mod at once; until then UI strings are literals.
 - Full UI presets (NaowhUI style) shipped with the mod and shareable as codes.
 - Keyboard nudging in the editor (arrow keys, read through `HuddableClient.inputCode`).
 - Moving whole container windows: `AbstractContainerScreen` has `protected int leftPos, topPos` in both 26.2 and

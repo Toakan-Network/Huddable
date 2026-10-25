@@ -5,7 +5,10 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "ChatComponentMixin",
-    "GuiToastsMixin"
+    "FontAccessor",
+    "GuiToastsMixin",
+    "HudFontMixin",
+    "TrueTypeOversampleMixin"
   ],
   "injectors": {
     "defaultRequire": 1

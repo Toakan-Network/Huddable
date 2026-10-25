@@ -8,7 +8,9 @@ Rearrange the vanilla HUD in game, no resource packs needed.
   Notify's notifications included
 - Window, GUI Scale or Fixed sizing for the whole HUD
 - Restyle health, hunger, armor and air as bars or numbers, in your own colours
+- Put the scoreboard, chat, tab list and other HUD text in any font from your resource packs, per profile or
+  per element, with a font quality setting
 - Named layout profiles, shared as copy-paste codes
 - Client-side, works on any server
 
-Open the editor from Mod Menu's Configure button. Requires Fabric API.
+Open the HUD Designer and General Settings from Mod Menu's Configure button. Requires Fabric API.

@@ -8,8 +8,8 @@ import java.util.Map;
 
 /**
  * A whole HUD layout: one {@link ElementLayout} per changed element, keyed by {@link HudPart#key()} (the enum name
- * for vanilla elements, {@code mod:path} for other mods'), plus the screen scale. Elements left out draw as
- * vanilla. Gson POJO, saved as one profile file and packed into share codes.
+ * for vanilla elements, {@code mod:path} for other mods'), plus the screen scale and the profile font. Elements
+ * left out draw as vanilla. Gson POJO, saved as one profile file and packed into share codes.
  */
 public final class Layout {
     private static final ElementLayout VANILLA = new ElementLayout();
@@ -21,6 +21,8 @@ public final class Layout {
 
     public Map<String, ElementLayout> elements = new LinkedHashMap<>();
     public Sizing sizing = Sizing.GUI_SCALE;
+    /** The profile's font for every element that has no font of its own; null = vanilla's ({@link HudFonts}). */
+    public String font;
 
     /** The element's layout, or a shared vanilla one when it has none; don't change what this returns. */
     public ElementLayout get(HudPart part) {
@@ -58,6 +60,7 @@ public final class Layout {
         Layout c = new Layout();
         elements.forEach((k, v) -> c.elements.put(k, v.copy()));
         c.sizing = sizing;
+        c.font = font;
         return c;
     }
 
@@ -69,6 +72,8 @@ public final class Layout {
     public Layout clamp() {
         if (elements == null) elements = new LinkedHashMap<>();
         if (sizing == null) sizing = Sizing.GUI_SCALE;
+        font = HudFonts.cleanId(font);
+        if (HudFonts.DEFAULT_FONT.equals(font)) font = null;
         Map<String, ElementLayout> kept = new LinkedHashMap<>();
         for (Element element : Element.values()) {
             ElementLayout l = elements.get(element.name());

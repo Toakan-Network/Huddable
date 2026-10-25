@@ -29,6 +29,11 @@ public final class ElementLayout {
     /** Resizable API elements only: size in the element's own units; 0 = its default. */
     public int width;
     public int height;
+    /**
+     * Font id from the resource packs, {@code minecraft:default} for vanilla's even when the profile has a font,
+     * or null for the profile's font ({@link HudFonts}).
+     */
+    public String font;
 
     public ElementLayout copy() {
         ElementLayout c = new ElementLayout();
@@ -43,21 +48,26 @@ public final class ElementLayout {
         c.showText = showText;
         c.width = width;
         c.height = height;
+        c.font = font;
         return c;
     }
 
     /** True when this draws exactly like vanilla, so it needn't be saved. */
     public boolean isDefault() {
-        return !hidden && dx == 0 && dy == 0 && scale == 100 && style == Style.VANILLA && width == 0 && height == 0;
+        return !hidden && dx == 0 && dy == 0 && scale == 100 && style == Style.VANILLA && width == 0 && height == 0
+            && font == null;
     }
 
-    /** Puts every field in range; a style the element can't use falls back to vanilla. */
+    /** Puts every field in range; a style or font the element can't use falls back to vanilla. */
     public void clamp(HudPart part) {
         clamp(part.restyleable(), part.movable());
+        if (!HudFonts.fontable(part)) font = null;
     }
 
     /** As {@link #clamp(HudPart)}, for another mod's element that isn't loaded now (kept, not restyleable). */
     public void clamp(boolean restyleable, boolean movable) {
+        // An id that isn't loaded now is kept (a share code from someone with another pack); it draws as vanilla.
+        font = HudFonts.cleanId(font);
         scale = Math.clamp(scale, MIN_SCALE, MAX_SCALE);
         barWidth = Math.clamp(barWidth, MIN_BAR_WIDTH, MAX_BAR_WIDTH);
         barHeight = Math.clamp(barHeight, MIN_BAR_HEIGHT, MAX_BAR_HEIGHT);

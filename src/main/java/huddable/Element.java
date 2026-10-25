@@ -27,28 +27,28 @@ import net.minecraft.world.scores.Scoreboard;
  * on live state it is measured the way vanilla measures it, or a typical size when that state isn't readable.
  */
 public enum Element implements HudPart {
-    HOTBAR(VanillaHudElements.HOTBAR, "Hotbar", true, false, false),
-    HEALTH_BAR(VanillaHudElements.HEALTH_BAR, "Health", true, true, false),
-    ARMOR_BAR(VanillaHudElements.ARMOR_BAR, "Armor", true, true, false),
-    FOOD_BAR(VanillaHudElements.FOOD_BAR, "Hunger", true, true, true),
-    AIR_BAR(VanillaHudElements.AIR_BAR, "Air", true, true, true),
-    MOUNT_HEALTH(VanillaHudElements.MOUNT_HEALTH, "Mount health", true, false, true),
-    INFO_BAR(VanillaHudElements.INFO_BAR, "Experience bar", true, false, false),
-    EXPERIENCE_LEVEL(VanillaHudElements.EXPERIENCE_LEVEL, "Experience level", true, false, false),
-    HELD_ITEM_TOOLTIP(VanillaHudElements.HELD_ITEM_TOOLTIP, "Held item name", true, false, false),
-    MOB_EFFECTS(VanillaHudElements.MOB_EFFECTS, "Effects", true, false, false),
-    BOSS_BAR(VanillaHudElements.BOSS_BAR, "Boss bar", true, false, false),
-    SCOREBOARD(VanillaHudElements.SCOREBOARD, "Scoreboard", true, false, false),
-    OVERLAY_MESSAGE(VanillaHudElements.OVERLAY_MESSAGE, "Action bar", true, false, false),
-    TITLE_AND_SUBTITLE(VanillaHudElements.TITLE_AND_SUBTITLE, "Title", true, false, false),
-    PLAYER_LIST(VanillaHudElements.PLAYER_LIST, "Tab list", true, false, false),
-    CROSSHAIR(VanillaHudElements.CROSSHAIR, "Crosshair", true, false, false),
-    SUBTITLES(VanillaHudElements.SUBTITLES, "Subtitles", true, false, false),
+    HOTBAR(VanillaHudElements.HOTBAR, "Hotbar", true, false, false, true),
+    HEALTH_BAR(VanillaHudElements.HEALTH_BAR, "Health", true, true, false, true),
+    ARMOR_BAR(VanillaHudElements.ARMOR_BAR, "Armor", true, true, false, true),
+    FOOD_BAR(VanillaHudElements.FOOD_BAR, "Hunger", true, true, true, true),
+    AIR_BAR(VanillaHudElements.AIR_BAR, "Air", true, true, true, true),
+    MOUNT_HEALTH(VanillaHudElements.MOUNT_HEALTH, "Mount health", true, false, true, false),
+    INFO_BAR(VanillaHudElements.INFO_BAR, "Experience bar", true, false, false, false),
+    EXPERIENCE_LEVEL(VanillaHudElements.EXPERIENCE_LEVEL, "Experience level", true, false, false, true),
+    HELD_ITEM_TOOLTIP(VanillaHudElements.HELD_ITEM_TOOLTIP, "Held item name", true, false, false, true),
+    MOB_EFFECTS(VanillaHudElements.MOB_EFFECTS, "Effects", true, false, false, false),
+    BOSS_BAR(VanillaHudElements.BOSS_BAR, "Boss bar", true, false, false, true),
+    SCOREBOARD(VanillaHudElements.SCOREBOARD, "Scoreboard", true, false, false, true),
+    OVERLAY_MESSAGE(VanillaHudElements.OVERLAY_MESSAGE, "Action bar", true, false, false, true),
+    TITLE_AND_SUBTITLE(VanillaHudElements.TITLE_AND_SUBTITLE, "Title", true, false, false, true),
+    PLAYER_LIST(VanillaHudElements.PLAYER_LIST, "Tab list", true, false, false, true),
+    CROSSHAIR(VanillaHudElements.CROSSHAIR, "Crosshair", true, false, false, false),
+    SUBTITLES(VanillaHudElements.SUBTITLES, "Subtitles", true, false, false, true),
     // Moved by ChatComponentMixin rather than HudWrapper, so the open chat and its clicks move too.
-    CHAT(VanillaHudElements.CHAT, "Chat", true, false, false),
+    CHAT(VanillaHudElements.CHAT, "Chat", true, false, false, true),
     // Not a Fabric HUD element (no ID): moved by GuiToastsMixin around vanilla's toast drawing, which also
     // covers Fancy Notify's notifications, as Fancy Notify draws them from inside that call.
-    TOASTS(null, "Toasts", true, false, false);
+    TOASTS(null, "Toasts", true, false, false, true);
 
     /** Vanilla's distance from the bottom of the screen to the top of the first status bar row. */
     private static final int STATUS_LINE = 39;
@@ -62,13 +62,16 @@ public enum Element implements HudPart {
     public final boolean restyleable;
     /** Status bars on the right of the hotbar fill from the right, so a restyled one is right-aligned. */
     public final boolean rightAligned;
+    /** Draws text that {@link HudFonts} can put in another font (a status bar only when restyled). */
+    public final boolean fontable;
 
-    Element(Identifier id, String label, boolean movable, boolean restyleable, boolean rightAligned) {
+    Element(Identifier id, String label, boolean movable, boolean restyleable, boolean rightAligned, boolean fontable) {
         this.id = id;
         this.label = label;
         this.movable = movable;
         this.restyleable = restyleable;
         this.rightAligned = rightAligned;
+        this.fontable = fontable;
     }
 
     @Override
@@ -118,7 +121,6 @@ public enum Element implements HudPart {
     /** Where vanilla draws this element now, for a screen of {@code w} x {@code h} GUI pixels. */
     @Override
     public Geometry geometry(Minecraft mc, int w, int h) {
-        Font font = mc.font;
         Player player = mc.getCameraEntity() instanceof Player p ? p : null;
         int centre = w / 2;
         int base = h - STATUS_LINE;
@@ -146,6 +148,7 @@ public enum Element implements HudPart {
             case INFO_BAR -> new Geometry(centre, h - 24, centre - 91, h - 29, 182, 5);
             case EXPERIENCE_LEVEL -> {
                 int level = player != null && player.experienceLevel > 0 ? player.experienceLevel : 30;
+                Font font = HudFonts.measuring(this, Profiles.current());
                 int textWidth = font.width(Component.translatable("gui.experience.level", level));
                 int y = h - 24 - 9 - 2;
                 yield new Geometry(centre, y, centre - textWidth / 2 - 1, y - 1, textWidth + 2, 11);
@@ -156,7 +159,7 @@ public enum Element implements HudPart {
             }
             case MOB_EFFECTS -> effectsGeometry(mc, player, w);
             case BOSS_BAR -> new Geometry(centre, 0, centre - 91, 3, 182, 14);
-            case SCOREBOARD -> scoreboardGeometry(mc, w, h);
+            case SCOREBOARD -> scoreboardGeometry(mc, HudFonts.measuring(this, Profiles.current()), w, h);
             case OVERLAY_MESSAGE -> new Geometry(centre, h - 68, centre - 75, h - 73, 150, 11);
             case TITLE_AND_SUBTITLE -> new Geometry(centre, h / 2, centre - 100, h / 2 - 42, 200, 72);
             case PLAYER_LIST -> new Geometry(centre, 0, centre - 100, 10, 200, 100);
@@ -237,8 +240,7 @@ public enum Element implements HudPart {
     }
 
     /** The sidebar is right-aligned and centred a little below the middle, as in Hud.displayScoreboardSidebar. */
-    private static Geometry scoreboardGeometry(Minecraft mc, int w, int h) {
-        Font font = mc.font;
+    private static Geometry scoreboardGeometry(Minecraft mc, Font font, int w, int h) {
         int width = 90;
         int entries = 10;
         Objective objective = mc.level != null ? mc.level.getScoreboard().getDisplayObjective(DisplaySlot.SIDEBAR) : null;

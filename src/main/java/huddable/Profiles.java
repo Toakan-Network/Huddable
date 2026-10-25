@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Named layouts. Each profile is {@code config/huddable/profiles/<name>.json}; {@code settings.json} names the
+ * Named layouts. Each profile is {@code config/huddable/profiles/<name>.json}; {@link GeneralSettings} names the
  * active one. Layouts are shared as codes through {@link Layout#toCode} and {@link Layout#fromCode}.
  */
 public final class Profiles {
@@ -17,11 +17,6 @@ public final class Profiles {
 
     private static final File DIR = new File(FabricLoader.getInstance().getConfigDir().toFile(), HuddableClient.MOD_ID);
     private static final File PROFILES_DIR = new File(DIR, "profiles");
-    private static final File SETTINGS = new File(DIR, "settings.json");
-
-    private static final class Settings {
-        String active = DEFAULT_NAME;
-    }
 
     private static String activeName = DEFAULT_NAME;
     private static Layout active = new Layout();
@@ -54,8 +49,7 @@ public final class Profiles {
     }
 
     public static void load() {
-        Settings settings = JsonFiles.read(SETTINGS, Settings.class);
-        activeName = settings != null && settings.active != null ? cleanName(settings.active) : DEFAULT_NAME;
+        activeName = cleanName(GeneralSettings.get().active);
         active = read(activeName);
     }
 
@@ -146,8 +140,7 @@ public final class Profiles {
     }
 
     private static void saveSettings() {
-        Settings settings = new Settings();
-        settings.active = activeName;
-        JsonFiles.writeAsync(SETTINGS, () -> settings);
+        GeneralSettings.get().active = activeName;
+        GeneralSettings.save();
     }
 }

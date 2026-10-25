@@ -5,14 +5,18 @@ you want them, make them bigger or smaller, hide what you don't need, and give t
 Other mods' HUD elements can be placed the same way. No resource packs or datapacks needed. Client-side, works
 on any server.
 
-Requires Fabric API. The editor opens from [Mod Menu](https://modrinth.com/mod/modmenu)'s Configure button;
-without Mod Menu a saved layout still applies, but you can't edit it.
+Requires Fabric API. Huddable's screens open from [Mod Menu](https://modrinth.com/mod/modmenu)'s Configure
+button; without Mod Menu a saved layout still applies, but you can't edit it.
 
 Minecraft 26.2 and 26.3 (one jar per version).
 
-## The editor
-Open Mod Menu, find Huddable and press Configure. In a world the live HUD shows through the editor; on the title
-screen each element is drawn as a labelled box.
+## Huddable's screen
+Open Mod Menu, find Huddable and press Configure. It has two buttons:
+- **HUD Designer:** the layout editor below, for moving, styling and choosing fonts, saved per profile.
+- **General Settings:** settings for the whole game rather than one profile (see below).
+
+## The editor (HUD Designer)
+In a world the live HUD shows through the editor; on the title screen each element is drawn as a labelled box.
 
 The editor's buttons are in a small window on the left edge. Drag its title strip to move it out of the way of
 whatever you're placing; it stays where you left it until the game closes.
@@ -24,6 +28,8 @@ whatever you're placing; it stays where you left it until the game closes.
   - **GUI** (default): follows Minecraft's GUI Scale, like vanilla.
   - **Window:** grows and shrinks with the window height.
   - **Fixed:** the same size on screen at any GUI Scale.
+- **Font:** the profile's font, picked from every font your resource packs provide (each shown in itself).
+  Every element that draws text uses it unless you give that element its own (see Fonts below).
 - **Move:** drag an element. It snaps to the screen edges and centre and to other elements' edges and centres
   (cyan guide lines); hold Shift to place it freely.
 - **Scale:** drag one of an element's gold corner handles (25% to 400%). The element keeps its shape.
@@ -37,6 +43,7 @@ whatever you're placing; it stays where you left it until the game closes.
   - Style (health, hunger, armor and air only): Vanilla, Bar, Number or Icon + number.
   - Colour (for the non-vanilla styles).
   - Bar width, height and text (Bar style).
+  - Font, for elements that draw text: Profile (the profile's font), Vanilla, or any pack font.
   - Reset element.
 - **Done** saves, **Cancel** or Esc drops your changes.
 
@@ -59,6 +66,21 @@ Notify's notifications until you show them again.
 
 Other mods that draw their HUD some other way can't be moved until they support Huddable.
 
+### Fonts
+Huddable doesn't ship fonts: it uses the ones your resource packs add (`assets/<namespace>/font/<name>.json`), the
+same list other mods' font options show. Pick one for the whole profile with the toolbar's **Font** button, or
+per element in its options; an element set to Vanilla keeps Minecraft's font even when the profile has another.
+
+Elements with fonts: hotbar (item counts), experience level, held item name, boss bar, scoreboard, action bar,
+title, tab list, subtitles, chat, toasts, and health, hunger, armor and air in the Bar and Number styles. Text
+that a server or mod draws in a font of its own (icons, for example) keeps it, and characters the chosen font
+doesn't have fall back to vanilla's. Backgrounds such as the scoreboard's and the tab list's fit the new font.
+If a profile's font comes from a pack you've turned off, those elements draw in vanilla's font until it's back,
+and share codes keep the font for players who have the pack.
+
+Chat in a new font re-wraps its lines to fit. Toasts drawn by another mod (Fancy Notify, for example) keep that
+mod's font; vanilla's toasts change.
+
 ### Styles
 - **Bar:** a filled bar with the value written on it. Health shows absorption and hunger shows saturation as a
   thin strip along the top.
@@ -68,6 +90,14 @@ Other mods that draw their HUD some other way can't be moved until they support 
 Hunger and air bars drain from the left like vanilla's icons. The styles appear only when vanilla would draw the
 bar (armor only with armor on, air only underwater or while it refills).
 
+## General Settings
+- **Font quality** (default 4x): how sharp TrueType fonts from resource packs are drawn, their "oversample".
+  Higher is sharper at large GUI scales but uses more video memory; **Pack's own** uses what each pack sets.
+  This applies to every TrueType font in the game, other mods' included, as Minecraft loads each font once for
+  everyone. Changing it reloads the resource packs once when you leave the screen.
+
+Saved in `config/huddable/settings.json`, which also remembers the active profile.
+
 ## Profiles
 The top button in the editor's window shows the active profile; click it to switch to the next one.
 - **New:** an empty (vanilla) profile.
@@ -75,7 +105,7 @@ The top button in the editor's window shows the active profile; click it to swit
 - **Delete:** press twice.
 - **Export:** copies the layout to the clipboard as a code starting `HUD1:`.
 - **Import:** reads a code from the clipboard into a new profile.
-- **Reset:** puts every element and the Size mode back to vanilla.
+- **Reset:** puts every element, the Size mode and the profile font back to vanilla.
 
 Profile actions save your current edits first. Profiles are in `config/huddable/profiles/`.
 

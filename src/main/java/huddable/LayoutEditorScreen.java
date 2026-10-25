@@ -12,13 +12,17 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 
 /**
- * The layout editor, opened from Mod Menu. In a world the live HUD shows through it: drag an element to move it
- * (it snaps to the screen edges and centre and to other elements; Shift places it freely), drag a corner to
- * scale it, drag an edge grip to resize it (chat, Bar-style bars, and other mods' elements that lay themselves
- * out), right-click it for its options (hide, style, colour). Other mods' elements ({@link Parts}) are placed the
+ * The layout editor (HUD Designer), opened from {@link HuddableScreen}. In a world the live HUD shows through it:
+ * drag an element to move it (it snaps to the screen edges and centre and to other elements; Shift places it
+ * freely), drag a corner to scale it, drag an edge grip to resize it (chat, Bar-style bars, and other mods'
+ * elements that lay themselves out), right-click it for its options (hide, style, colour, font). The Font button
+ * sets the profile's font, which every text element uses unless it has its own. Other mods' elements ({@link Parts}) are placed the
  * same way. On the title screen the elements are drawn as labelled boxes. Changes show at once; Done saves them
  * to the active profile, Cancel or Esc drops them (chat's size, a vanilla option, is put back too).
  * The controls are a small window (left edge by default) that drags by its title, so nothing on the HUD is out
@@ -35,10 +39,11 @@ public class LayoutEditorScreen extends Screen {
     private static final int TOOLBAR_WIDTH = 72;
     /** Title strip at the top of the controls; drag it to move them. */
     private static final int GRIP = 12;
-    private static final int TOOLBAR_BUTTONS = 11;
+    private static final int TOOLBAR_BUTTONS = 12;
     private static final int TOOLBAR_HEIGHT = GRIP + TOOLBAR_BUTTONS * 22 + 2;
     private static final int HANDLE = 6;
     private static final int PANEL_WIDTH = 130;
+    private static final int FONT_PANEL_WIDTH = 170;
     private static final int ROW = 22;
     private static final int SCALE_STEP = 10;
     private static final int SIZE_STEP = 5;
@@ -69,6 +74,10 @@ public class LayoutEditorScreen extends Screen {
     private int panelX, panelY, panelWidth, panelHeight;
     /** The Elements panel: every element with a show/hide toggle. */
     private boolean showList;
+    /** The font list: for {@link #fontTarget}, or the profile font when that is null. */
+    private boolean pickingFont;
+    private HudPart fontTarget;
+    private int fontPage;
     /** Where the controls were left, kept while the game runs; -1 = default (left edge, halfway down). */
     private static int toolbarX = -1;
     private static int toolbarY = -1;
@@ -94,6 +103,7 @@ public class LayoutEditorScreen extends Screen {
         working = Profiles.active().copy();
         Profiles.setPreview(working);
         selected = null;
+        pickingFont = false;
     }
 
     // ---- Widgets ----
@@ -124,7 +134,17 @@ public class LayoutEditorScreen extends Screen {
         y += ROW;
         y = toolbarButton(x, y, "Elements", "Show or hide HUD elements from a list", () -> {
             showList = !showList;
+            pickingFont = false;
             selected = null;
+            rebuildWidgets();
+        });
+        y = toolbarButton(x, y, "Font", "Profile font: " + fontName(working.font, false) + ". Every element that draws "
+            + "text uses it unless it has a font of its own (right-click it). Fonts come from your resource packs", () -> {
+            boolean open = pickingFont && fontTarget == null;
+            showList = false;
+            selected = null;
+            openFontList(null);
+            pickingFont = !open;
             rebuildWidgets();
         });
         y = toolbarButton(x, y, "Size: " + working.sizing.label,
@@ -142,6 +162,7 @@ public class LayoutEditorScreen extends Screen {
         y = toolbarButton(x, y, "Cancel", "Close without saving", this::onClose);
         toolbarButton(x, y, "Done", "Save and close", this::done);
         if (showList) buildList();
+        else if (pickingFont) buildFontList();
         else if (selected != null) buildPanel();
     }
 
@@ -219,9 +240,93 @@ public class LayoutEditorScreen extends Screen {
                 y = panelButton(x, y, w, "Text: " + (l.showText ? "On" : "Off"), () -> working.edit(selected).showText = !l.showText);
             }
         }
+        if (HudFonts.fontable(selected, l)) {
+            y = panelButton(x, y, w, "Font: " + fontName(l.font, true), () -> openFontList(selected));
+        }
         y = panelButton(x, y, w, "Reset element", () -> working.reset(selected));
         y = panelButton(x, y, w, "Close", () -> selected = null);
         panelHeight = y - panelY + 2;
+    }
+
+    private void openFontList(HudPart target) {
+        pickingFont = true;
+        fontTarget = target;
+        fontPage = 0;
+    }
+
+    /** A font choice's name: {@code null} is the profile font for an element, vanilla's for the profile. */
+    private static String fontName(String id, boolean element) {
+        if (id == null) return element ? "Profile" : "Vanilla";
+        return id.equals(HudFonts.DEFAULT_FONT) ? "Vanilla" : id;
+    }
+
+    /**
+     * Every font the resource packs provide, each shown in itself, a page at a time; the current choice is gold.
+     * For an element the first choice is the profile font. Back returns to the element's options.
+     */
+    private void buildFontList() {
+        placePanel(FONT_PANEL_WIDTH);
+        int x = panelX + 4;
+        int w = FONT_PANEL_WIDTH - 8;
+        List<String> available = HudFonts.availableFonts();
+        List<String> choices = new ArrayList<>();
+        if (fontTarget != null) choices.add(null);
+        choices.addAll(available);
+        String current = fontTarget != null ? working.get(fontTarget).font
+            : working.font != null ? working.font : HudFonts.DEFAULT_FONT;
+        if (current != null && !choices.contains(current)) choices.add(current); // set, but its pack is off now
+        int perPage = Math.max(1, (height - panelY - 16 - 2 * ROW - 2) / ROW);
+        int pages = (choices.size() + perPage - 1) / perPage;
+        fontPage = Math.clamp(fontPage, 0, pages - 1);
+        int y = panelY + 16;
+        for (int i = fontPage * perPage; i < Math.min(choices.size(), (fontPage + 1) * perPage); i++) {
+            String id = choices.get(i);
+            addRenderableWidget(Button.builder(fontLabel(id, id == null ? current == null : id.equals(current)), b -> {
+                setFont(id);
+                rebuildWidgets();
+            }).tooltip(Tooltip.create(Component.literal(fontTip(id, available)))).bounds(x, y, w, 20).build());
+            y += ROW;
+        }
+        if (pages > 1) {
+            addRenderableWidget(Button.builder(Component.literal("<"), b -> {
+                fontPage--;
+                rebuildWidgets();
+            }).bounds(x, y, 20, 20).build()).active = fontPage > 0;
+            addRenderableWidget(Button.builder(Component.literal(">"), b -> {
+                fontPage++;
+                rebuildWidgets();
+            }).bounds(x + w - 20, y, 20, 20).build()).active = fontPage < pages - 1;
+            y += ROW;
+        }
+        y = panelButton(x, y, w, fontTarget != null ? "Back" : "Close", () -> pickingFont = false);
+        panelHeight = y - panelY + 2;
+    }
+
+    private Component fontLabel(String id, boolean chosen) {
+        String name = fontName(id, fontTarget != null);
+        MutableComponent label = Component.literal(chosen ? "> " + name : name);
+        // A pack's font is shown in itself, so the list previews it.
+        if (id != null && !id.equals(HudFonts.DEFAULT_FONT)) {
+            FontDescription look = new FontDescription.Resource(Identifier.parse(id));
+            label.withStyle(style -> style.withFont(look));
+        }
+        return chosen ? label.withStyle(ChatFormatting.GOLD) : label;
+    }
+
+    private String fontTip(String id, List<String> available) {
+        if (id == null) return "Use the profile font (toolbar Font button)";
+        if (id.equals(HudFonts.DEFAULT_FONT)) return "Minecraft's own font" + (fontTarget != null ? ", even when the profile has another" : "");
+        return id + (available.contains(id) ? "" : "\nIts resource pack is off, so this draws in vanilla's font");
+    }
+
+    private void setFont(String id) {
+        if (fontTarget == null) {
+            working.font = HudFonts.DEFAULT_FONT.equals(id) ? null : id;
+            return;
+        }
+        working.edit(fontTarget).font = id;
+        // Text in another font has another width.
+        if (fontTarget.movable()) keepOnScreen(fontTarget);
     }
 
     /** A full-width panel button; the panel is rebuilt after it runs, so labels show the new value. */
@@ -312,7 +417,9 @@ public class LayoutEditorScreen extends Screen {
     private void resetAll() {
         working.elements.clear();
         working.sizing = Sizing.GUI_SCALE;
+        working.font = null;
         selected = null;
+        pickingFont = false;
         rebuildWidgets();
     }
 
@@ -391,6 +498,11 @@ public class LayoutEditorScreen extends Screen {
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
             context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
             context.text(font, "HUD elements", panelX + 4, panelY + 4, GOLD, false);
+        } else if (pickingFont) {
+            context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
+            context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
+            String title = fontTarget != null ? "Font: " + fontTarget.label() : "Profile font";
+            context.text(font, font.plainSubstrByWidth(title, panelWidth - 8), panelX + 4, panelY + 4, GOLD, false);
         } else if (selected != null) {
             ElementLayout l = working.get(selected);
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
@@ -471,7 +583,7 @@ public class LayoutEditorScreen extends Screen {
     }
 
     private boolean inPanel(int mouseX, int mouseY) {
-        return (showList || selected != null) && mouseX >= panelX && mouseX < panelX + panelWidth
+        return (showList || pickingFont || selected != null) && mouseX >= panelX && mouseX < panelX + panelWidth
             && mouseY >= panelY && mouseY < panelY + panelHeight;
     }
 
@@ -492,6 +604,7 @@ public class LayoutEditorScreen extends Screen {
         HudPart element = elementAt(mouseX, mouseY);
         if (ctx.button() == mouseRight) {
             if (element != null) showList = false;
+            pickingFont = false;
             selected = element;
             rebuildWidgets();
             return true;
@@ -499,6 +612,7 @@ public class LayoutEditorScreen extends Screen {
         if (ctx.button() != mouseLeft || element == null) return false;
         if (selected != null && selected != element) {
             selected = element;
+            pickingFont = false;
             rebuildWidgets();
         }
         if (!element.movable()) return true;

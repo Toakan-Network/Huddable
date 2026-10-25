@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.player.Player;
 import org.joml.Matrix3x2f;
@@ -12,7 +13,7 @@ import org.joml.Matrix3x2fStack;
 /**
  * Wraps every {@link Element} through Fabric's {@link HudElementRegistry#replaceElement}, so vanilla (and any mod
  * that wrapped it first) still does the drawing: Huddable only shifts and scales the pose around it, skips it when
- * hidden, or draws a {@link BarRenderers} style instead. Other mods' Fabric layers are wrapped the same way by
+ * hidden, swaps its font ({@link HudFonts}), or draws a {@link BarRenderers} style instead. Other mods' Fabric layers are wrapped the same way by
  * {@link HudDiscovery}. Chat is the exception: it is moved by
  * {@code mixin.ChatComponentMixin}, as the open chat isn't drawn through the HUD.
  */
@@ -34,7 +35,9 @@ public final class HudWrapper {
         if (layout.hidden) return;
         // Chat is moved by ChatComponentMixin, which also covers the open chat and its clicks.
         float scale = scale(element, layout);
-        if (element == Element.CHAT || layout.isDefault() && scale == 1f) {
+        // Chat's font goes into its line styles instead (ChatComponentMixin).
+        Font font = element == Element.CHAT ? null : HudFonts.wrapped(element, Profiles.current());
+        if (element == Element.CHAT || layout.isDefault() && scale == 1f && font == null) {
             original.extractRenderState(graphics, delta);
             return;
         }
@@ -44,12 +47,28 @@ public final class HudWrapper {
         pose.pushMatrix();
         transform(pose, anchor[0], anchor[1], layout, scale);
         if (layout.style == Style.VANILLA) {
-            original.extractRenderState(graphics, delta);
+            drawInFont(font, () -> original.extractRenderState(graphics, delta));
         } else if (mc.getCameraEntity() instanceof Player player) {
             BarRenderers.Reading reading = BarRenderers.read(element, player);
-            if (reading != null) BarRenderers.draw(graphics, mc.font, element, layout, anchor[0], anchor[1], reading);
+            if (reading != null) {
+                BarRenderers.draw(graphics, font != null ? font : mc.font, element, layout, anchor[0], anchor[1], reading);
+            }
         }
         pose.popMatrix();
+    }
+
+    /** Runs vanilla's drawing with {@code font} (null = vanilla's) in place of the game font ({@code HudFontMixin}). */
+    public static void drawInFont(Font font, Runnable draw) {
+        if (font == null) {
+            draw.run();
+            return;
+        }
+        Font previous = HudFonts.setActive(font);
+        try {
+            draw.run();
+        } finally {
+            HudFonts.setActive(previous);
+        }
     }
 
     /** Another mod's Fabric HUD layer ({@link HudDiscovery}): moved and scaled around its measured anchor. */
@@ -91,7 +110,7 @@ public final class HudWrapper {
         int height;
         if (part instanceof Element element && layout.style != Style.VANILLA) {
             BarRenderers.Reading reading = mc.getCameraEntity() instanceof Player player ? BarRenderers.read(element, player) : null;
-            int[] size = BarRenderers.size(element, layout, mc.font, reading);
+            int[] size = BarRenderers.size(element, layout, HudFonts.measuring(element, Profiles.current()), reading);
             width = size[0];
             height = size[1];
             x = element.rightAligned ? g.anchorX() - width : g.anchorX();
