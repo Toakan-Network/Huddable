@@ -31,8 +31,9 @@ whatever you're placing; it stays where you left it until the game closes.
 - **Done** saves, **Cancel** or Esc drops your changes.
 
 Elements: hotbar, health, armor, hunger, air, mount health, experience bar, experience level, held item name,
-effects, boss bar, scoreboard, action bar, title, tab list, crosshair, subtitles, and chat (hide only: moving
-chat would break clicking on it).
+effects, boss bar, scoreboard, action bar, title, tab list, crosshair, subtitles, and chat. Moved or scaled
+chat stays where you put it when you open it (T), and clicking links and hovering messages work there; the input
+box stays at the bottom of the screen.
 
 ### Styles
 - **Bar:** a filled bar with the value written on it. Health shows absorption and hunger shows saturation as a

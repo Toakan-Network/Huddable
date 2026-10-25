@@ -39,14 +39,16 @@ class LayoutCodeTest {
         hotbar.scale = 5000;
         hotbar.style = Style.NUMBER; // the hotbar can't be restyled
         ElementLayout chat = layout.edit(Element.CHAT);
-        chat.dx = 50; // chat can't move
+        chat.dx = 50;
+        chat.style = Style.BAR; // chat can't be restyled
         chat.hidden = true;
 
         Layout back = Layout.fromCode(layout.toCode());
 
         assertEquals(ElementLayout.MAX_SCALE, back.get(Element.HOTBAR).scale);
         assertEquals(Style.VANILLA, back.get(Element.HOTBAR).style);
-        assertEquals(0, back.get(Element.CHAT).dx);
+        assertEquals(50, back.get(Element.CHAT).dx);
+        assertEquals(Style.VANILLA, back.get(Element.CHAT).style);
         assertTrue(back.get(Element.CHAT).hidden);
     }
 

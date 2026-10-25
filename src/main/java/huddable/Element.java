@@ -3,6 +3,7 @@ package huddable;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.numbers.StyledFormat;
 import net.minecraft.resources.Identifier;
@@ -43,11 +44,14 @@ public enum Element {
     PLAYER_LIST(VanillaHudElements.PLAYER_LIST, "Tab list", true, false, false),
     CROSSHAIR(VanillaHudElements.CROSSHAIR, "Crosshair", true, false, false),
     SUBTITLES(VanillaHudElements.SUBTITLES, "Subtitles", true, false, false),
-    // Chat can only be hidden: the chat screen hit-tests clicks and hovers at vanilla's position.
-    CHAT(VanillaHudElements.CHAT, "Chat", false, false, false);
+    // Moved by ChatComponentMixin rather than HudWrapper, so the open chat and its clicks move too.
+    CHAT(VanillaHudElements.CHAT, "Chat", true, false, false);
 
     /** Vanilla's distance from the bottom of the screen to the top of the first status bar row. */
     private static final int STATUS_LINE = 39;
+    /** Chat's anchor: its bottom-left corner, {@code ChatComponent}'s {@code screenHeight - 40}. */
+    public static final int CHAT_ANCHOR_X = 0;
+    public static final int CHAT_BOTTOM_OFFSET = 40;
 
     public final Identifier id;
     public final String label;
@@ -113,8 +117,22 @@ public enum Element {
             case PLAYER_LIST -> new Geometry(centre, 0, centre - 100, 10, 200, 100);
             case CROSSHAIR -> new Geometry(centre, h / 2, (w - 15) / 2, (h - 15) / 2, 15, 15);
             case SUBTITLES -> new Geometry(w, h - 35, w - 152, h - 80, 150, 50);
-            case CHAT -> new Geometry(0, h - 40, 2, h - 130, 320, 90);
+            case CHAT -> chatGeometry(mc, h);
         };
+    }
+
+    /**
+     * The closed chat's full area as ChatComponent sizes it: chat width plus its 4 px margins on each side, and
+     * as many lines as the unfocused height holds.
+     */
+    private static Geometry chatGeometry(Minecraft mc, int h) {
+        double scale = mc.options.chatScale().get();
+        int lineHeight = (int) (9.0 * (mc.options.chatLineSpacing().get() + 1.0));
+        int lines = ChatComponent.getHeight(mc.options.chatHeightUnfocused().get()) / lineHeight;
+        int width = (int) Math.round(ChatComponent.getWidth(mc.options.chatWidth().get()) + 12 * scale);
+        int height = Math.max(1, (int) Math.round(lines * lineHeight * scale));
+        int bottom = h - CHAT_BOTTOM_OFFSET;
+        return new Geometry(CHAT_ANCHOR_X, bottom, CHAT_ANCHOR_X, bottom - height, width, height);
     }
 
     /**

@@ -2,7 +2,7 @@
 
 Rearrange the vanilla HUD in game, no resource packs needed.
 
-- Drag HUD elements to move them, with snapping to edges and other elements (chat can be hidden only)
+- Drag HUD elements to move them, with snapping to edges and other elements, chat included
 - Scale elements from 25% to 400%, or hide them
 - Restyle health, hunger, armor and air as bars or numbers, in your own colours
 - Named layout profiles, shared as copy-paste codes

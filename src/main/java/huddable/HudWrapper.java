@@ -6,12 +6,14 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.player.Player;
+import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
 
 /**
  * Wraps every {@link Element} through Fabric's {@link HudElementRegistry#replaceElement}, so vanilla (and any mod
  * that wrapped it first) still does the drawing: Huddable only shifts and scales the pose around it, skips it when
- * hidden, or draws a {@link BarRenderers} style instead. No mixins.
+ * hidden, or draws a {@link BarRenderers} style instead. Chat is the exception: it is moved by
+ * {@code mixin.ChatComponentMixin}, as the open chat isn't drawn through the HUD.
  */
 public final class HudWrapper {
     /** A box on screen, in GUI pixels. */
@@ -28,7 +30,8 @@ public final class HudWrapper {
     private static void render(Element element, HudElement original, GuiGraphicsExtractor graphics, DeltaTracker delta) {
         ElementLayout layout = Profiles.current().get(element);
         if (layout.hidden) return;
-        if (layout.isDefault()) {
+        // Chat is moved by ChatComponentMixin, which also covers the open chat and its clicks.
+        if (layout.isDefault() || element == Element.CHAT) {
             original.extractRenderState(graphics, delta);
             return;
         }
@@ -47,7 +50,7 @@ public final class HudWrapper {
     }
 
     /** Moves the anchor by the layout's offset and scales around it. */
-    static void transform(Matrix3x2fStack pose, int anchorX, int anchorY, ElementLayout layout) {
+    public static void transform(Matrix3x2f pose, int anchorX, int anchorY, ElementLayout layout) {
         float scale = layout.scaleFactor();
         pose.translate(anchorX + layout.dx, anchorY + layout.dy);
         pose.scale(scale, scale);

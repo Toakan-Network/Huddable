@@ -9,12 +9,16 @@ has what differs. Progress, next steps and known issues are in `ROADMAP.md`: rea
 update it in the same commit when a step lands or an issue is found or fixed.
 
 ## Design
-- No mixins. Every vanilla element is wrapped with Fabric's `HudElementRegistry.replaceElement`
-  (`HudWrapper`), so vanilla, or a mod that wrapped it first, still draws; Huddable only shifts and scales the
-  pose, skips it when hidden, or draws a `BarRenderers` style instead.
+- Every vanilla element is wrapped with Fabric's `HudElementRegistry.replaceElement` (`HudWrapper`), so
+  vanilla, or a mod that wrapped it first, still draws; Huddable only shifts and scales the pose, skips it when
+  hidden, or draws a `BarRenderers` style instead.
+- One mixin, for chat only (`mixin.ChatComponentMixin`): the HUD element only covers the closed chat, while the
+  open chat and `ChatScreen`'s click test call `ChatComponent.extractRenderState(ChatGraphicsAccess, ...)`
+  directly. Its HEAD applies the chat layout through `updatePose`, which every access honours (hovers invert the
+  pose), so drawing and clicks move together. `HudWrapper` must not also shift chat. Add no other mixins
+  without a reason like this.
 - Positions are offsets from each element's vanilla anchor (`Element.geometry`), so layouts follow screen size
   and GUI scale. Element boxes are for the editor only; keep the per-frame path (`Element.anchor`) cheap.
-- Chat is hide-only: `ChatScreen` hit-tests at vanilla's position.
 - Fabric HUD API sources for checking names are in `..\.mc-sources\fabric-rendering-v1\<mc>\`; vanilla in
   `..\.mc-sources\<mc>\`.
 - Dependencies: Fabric API only. Mod Menu is optional (`compileOnly`, `suggests`) and is the only way to open the
