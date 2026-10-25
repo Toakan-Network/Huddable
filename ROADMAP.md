@@ -20,8 +20,8 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   and the scoreboard.
 - The bar styles' visibility (armor at 0, air surfacing, hunger while riding).
 - Moved chat: open chat at the new spot, link clicks, hover tooltips, the message-tag hover, and the chat box in
-  the editor against vanilla's (width, line spacing, chat scale). Other chat mods that draw at vanilla's chat
-  position (ChatTabs' tab bar) don't follow it.
+  the editor against vanilla's (width, line spacing, chat scale). Mods that draw at vanilla's chat position don't
+  follow it unless they read chat's pose, as ChatTabs 0.2.0 does.
 - 26.3 in a real client.
 
 ## Next (ElvUI direction)
