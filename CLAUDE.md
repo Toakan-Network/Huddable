@@ -15,8 +15,10 @@ update it in the same commit when a step lands or an issue is found or fixed.
 - One mixin, for chat only (`mixin.ChatComponentMixin`): the HUD element only covers the closed chat, while the
   open chat and `ChatScreen`'s click test call `ChatComponent.extractRenderState(ChatGraphicsAccess, ...)`
   directly. Its HEAD applies the chat layout through `updatePose`, which every access honours (hovers invert the
-  pose), so drawing and clicks move together. `HudWrapper` must not also shift chat. Add no other mixins
-  without a reason like this.
+  pose), so drawing and clicks move together. `HudWrapper` must not also shift chat. The second mixin,
+  `mixin.GuiToastsMixin`, wraps `Gui`'s one `ToastManager.extractRenderState` call: toasts aren't a Fabric HUD
+  element, and Fancy Notify draws its notifications from a HEAD inject inside that call, so they move too. Add no
+  other mixins without a reason like these.
 - Positions are offsets from each element's vanilla anchor (`Element.geometry`), so layouts follow screen size
   and GUI scale. Element boxes are for the editor only; keep the per-frame path (`Element.anchor`) cheap.
 - Everything placeable is a `HudPart`: the `Element` enum, or `ExternalPart` for other mods (listed by `Parts`,

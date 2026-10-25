@@ -41,7 +41,7 @@ whatever you're placing; it stays where you left it until the game closes.
 - **Done** saves, **Cancel** or Esc drops your changes.
 
 Elements: hotbar, health, armor, hunger, air, mount health, experience bar, experience level, held item name,
-effects, boss bar, scoreboard, action bar, title, tab list, crosshair, subtitles, and chat. Moved or scaled
+effects, boss bar, scoreboard, action bar, title, tab list, crosshair, subtitles, toasts, and chat. Moved or scaled
 chat stays where you put it when you open it (T), and clicking links and hovering messages work there; the input
 box stays at the bottom of the screen.
 
@@ -52,8 +52,12 @@ each one from what it draws; one that isn't drawing anything right now shows as 
 until it appears. Mods can also register their elements with Huddable directly (see below), which lets them
 resize too. Positions are kept in the profile even if you remove the mod.
 
-Mods that draw their HUD some other way (for example Fancy Notify's notifications) can't be moved until they
-support Huddable.
+**Toasts** (the pop-ups in the top-right corner) move, scale and hide as one element. With
+[Fancy Notify](https://modrinth.com/mod/fancy-notify) installed, its notifications move with them: the box starts
+at the corner set in Fancy Notify's options, and Huddable moves it from there. Hiding toasts also pauses Fancy
+Notify's notifications until you show them again.
+
+Other mods that draw their HUD some other way can't be moved until they support Huddable.
 
 ### Styles
 - **Bar:** a filled bar with the value written on it. Health shows absorption and hunger shows saturation as a

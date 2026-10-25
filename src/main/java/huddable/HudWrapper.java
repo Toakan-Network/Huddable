@@ -24,6 +24,7 @@ public final class HudWrapper {
 
     public static void registerAll() {
         for (Element element : Element.values()) {
+            if (element.id == null) continue; // toasts: GuiToastsMixin
             HudElementRegistry.replaceElement(element.id, original -> (graphics, delta) -> render(element, original, graphics, delta));
         }
     }

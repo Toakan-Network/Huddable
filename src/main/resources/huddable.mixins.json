@@ -4,7 +4,8 @@
   "package": "huddable.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "ChatComponentMixin"
+    "ChatComponentMixin",
+    "GuiToastsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

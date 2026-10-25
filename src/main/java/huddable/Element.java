@@ -45,7 +45,10 @@ public enum Element implements HudPart {
     CROSSHAIR(VanillaHudElements.CROSSHAIR, "Crosshair", true, false, false),
     SUBTITLES(VanillaHudElements.SUBTITLES, "Subtitles", true, false, false),
     // Moved by ChatComponentMixin rather than HudWrapper, so the open chat and its clicks move too.
-    CHAT(VanillaHudElements.CHAT, "Chat", true, false, false);
+    CHAT(VanillaHudElements.CHAT, "Chat", true, false, false),
+    // Not a Fabric HUD element (no ID): moved by GuiToastsMixin around vanilla's toast drawing, which also
+    // covers Fancy Notify's notifications, as Fancy Notify draws them from inside that call.
+    TOASTS(null, "Toasts", true, false, false);
 
     /** Vanilla's distance from the bottom of the screen to the top of the first status bar row. */
     private static final int STATUS_LINE = 39;
@@ -160,6 +163,7 @@ public enum Element implements HudPart {
             case CROSSHAIR -> new Geometry(centre, h / 2, (w - 15) / 2, (h - 15) / 2, 15, 15);
             case SUBTITLES -> new Geometry(w, h - 35, w - 152, h - 80, 150, 50);
             case CHAT -> chatGeometry(mc, h);
+            case TOASTS -> ToastArea.geometry(w, h);
         };
     }
 

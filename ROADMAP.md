@@ -30,13 +30,15 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.2.0: which installed mods' layers discovery finds (the log lists them), measured boxes against what they
   draw, moving and scaling them; the "(not showing)" placeholder; chat edge-resize and Cancel restoring chat's
   size; Bar edge-resize; the Size modes when the window or GUI Scale changes. The API has no user yet.
+- 0.2.1: toasts moving, with vanilla toasts and with Fancy Notify (each anchor corner). The dev client starts with
+  `GuiToastsMixin` applied.
 
 ## Next (ElvUI direction)
 - Shopping List on Huddable: register its five panels through the API (resizable), hand its Move HUD to
   Huddable's editor and ignore its `sandbox_widget` layer. Waiting for Huddable on Modrinth, so Shopping List's CI
   can compile against `maven.modrinth:huddable`.
-- Fancy Notify: ask its author to register notifications through the API (it draws from its own `Gui` mixin, so
-  discovery can't see it).
+- Fancy Notify's box is its corner plus a typical stack height (read from its `general.json`); measuring what it
+  draws would fit it exactly.
 - Custom widgets: text, bars and icons tied to live data (coordinates, FPS, durability, clock, ping).
 - Unit frames: a player frame (health, hunger, armor and XP in one panel) and a target frame for the entity
   under the crosshair.
