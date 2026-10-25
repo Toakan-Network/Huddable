@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
@@ -121,25 +122,25 @@ public class LayoutEditorScreen extends Screen {
         int x = toolbarX + 2;
         int y = toolbarY + GRIP;
         if (renaming) {
-            nameBox = new EditBox(font, x + 1, y + 1, TOOLBAR_WIDTH - 6, 18, Component.literal("Profile name"));
+            nameBox = new EditBox(font, x + 1, y + 1, TOOLBAR_WIDTH - 6, 18, Component.translatable("huddable.editor.profile_name"));
             nameBox.setMaxLength(32);
             nameBox.setValue(draft);
             addRenderableWidget(nameBox);
             setInitialFocus(nameBox);
         } else {
             addRenderableWidget(Button.builder(Component.literal(Profiles.activeName()), b -> nextProfile())
-                .tooltip(Tooltip.create(Component.literal("Profile " + Profiles.activeName() + ": click to switch")))
+                .tooltip(Tooltip.create(Component.translatable("huddable.editor.profile.tooltip", Profiles.activeName())))
                 .bounds(x, y, TOOLBAR_WIDTH - 4, 20).build());
         }
         y += ROW;
-        y = toolbarButton(x, y, "Elements", "Show or hide HUD elements from a list", () -> {
+        y = toolbarButton(x, y, I18n.get("huddable.editor.elements"), I18n.get("huddable.editor.elements.tooltip"), () -> {
             showList = !showList;
             pickingFont = false;
             selected = null;
             rebuildWidgets();
         });
-        y = toolbarButton(x, y, "Font", "Profile font: " + fontName(working.font, false) + ". Every element that draws "
-            + "text uses it unless it has a font of its own (right-click it). Fonts come from your resource packs", () -> {
+        y = toolbarButton(x, y, I18n.get("huddable.editor.font"),
+            I18n.get("huddable.editor.font.tooltip", fontName(working.font, false)), () -> {
             boolean open = pickingFont && fontTarget == null;
             showList = false;
             selected = null;
@@ -147,20 +148,21 @@ public class LayoutEditorScreen extends Screen {
             pickingFont = !open;
             rebuildWidgets();
         });
-        y = toolbarButton(x, y, "Size: " + working.sizing.label,
-            "How the whole HUD's size follows the screen. GUI: Minecraft's GUI Scale. Window: grows and shrinks "
-                + "with the window. Fixed: the same size at any GUI Scale", () -> {
+        y = toolbarButton(x, y, I18n.get("huddable.editor.size", working.sizing.label()),
+            I18n.get("huddable.editor.size.tooltip"), () -> {
             working.sizing = working.sizing.next();
             rebuildWidgets();
         });
-        y = toolbarButton(x, y, "New", "A new empty profile", this::newProfile);
-        y = toolbarButton(x, y, renaming ? "OK" : "Rename", "Rename this profile", this::rename);
-        y = toolbarButton(x, y, confirmDelete ? "Sure?" : "Delete", "Delete this profile", this::delete);
-        y = toolbarButton(x, y, "Export", "Copy this layout to the clipboard as a code", this::exportLayout);
-        y = toolbarButton(x, y, "Import", "Load a layout code from the clipboard as a new profile", this::importLayout);
-        y = toolbarButton(x, y, "Reset", "Put every element back to vanilla", this::resetAll);
-        y = toolbarButton(x, y, "Cancel", "Close without saving", this::onClose);
-        toolbarButton(x, y, "Done", "Save and close", this::done);
+        y = toolbarButton(x, y, I18n.get("huddable.editor.new"), I18n.get("huddable.editor.new.tooltip"), this::newProfile);
+        y = toolbarButton(x, y, I18n.get(renaming ? "huddable.editor.rename.ok" : "huddable.editor.rename"),
+            I18n.get("huddable.editor.rename.tooltip"), this::rename);
+        y = toolbarButton(x, y, I18n.get(confirmDelete ? "huddable.editor.delete.confirm" : "huddable.editor.delete"),
+            I18n.get("huddable.editor.delete.tooltip"), this::delete);
+        y = toolbarButton(x, y, I18n.get("huddable.editor.export"), I18n.get("huddable.editor.export.tooltip"), this::exportLayout);
+        y = toolbarButton(x, y, I18n.get("huddable.editor.import"), I18n.get("huddable.editor.import.tooltip"), this::importLayout);
+        y = toolbarButton(x, y, I18n.get("huddable.editor.reset"), I18n.get("huddable.editor.reset.tooltip"), this::resetAll);
+        y = toolbarButton(x, y, I18n.get("huddable.editor.cancel"), I18n.get("huddable.editor.cancel.tooltip"), this::onClose);
+        toolbarButton(x, y, I18n.get("huddable.editor.done"), I18n.get("huddable.editor.done.tooltip"), this::done);
         if (showList) buildList();
         else if (pickingFont) buildFontList();
         else if (selected != null) buildPanel();
@@ -197,17 +199,18 @@ public class LayoutEditorScreen extends Screen {
             addRenderableWidget(Button.builder(label, b -> {
                 working.edit(element).hidden = !hidden;
                 rebuildWidgets();
-            }).tooltip(Tooltip.create(Component.literal(element.label() + (hidden ? "\nHidden: click to show" : "\nShown: click to hide"))))
+            }).tooltip(Tooltip.create(Component.translatable(hidden ? "huddable.editor.list.hidden" : "huddable.editor.list.shown",
+                element.label())))
                 .bounds(x, y, columnWidth, 20).build());
         }
         int y = panelY + 16 + rows * ROW;
-        addRenderableWidget(Button.builder(Component.literal("Show all"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("huddable.editor.list.show_all"), b -> {
             for (HudPart element : Parts.all()) {
                 if (working.get(element).hidden) working.edit(element).hidden = false;
             }
             rebuildWidgets();
         }).bounds(panelX + 4, y, columnWidth, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Close"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("huddable.editor.close"), b -> {
             showList = false;
             rebuildWidgets();
         }).bounds(panelX + 6 + columnWidth, y, columnWidth, 20).build());
@@ -221,15 +224,17 @@ public class LayoutEditorScreen extends Screen {
         int x = panelX + 4;
         int w = PANEL_WIDTH - 8;
         int y = panelY + 16;
-        y = panelButton(x, y, w, l.hidden ? "Show" : "Hide", () -> working.edit(selected).hidden = !l.hidden);
+        y = panelButton(x, y, w, I18n.get(l.hidden ? "huddable.editor.panel.show" : "huddable.editor.panel.hide"),
+            () -> working.edit(selected).hidden = !l.hidden);
         if (selected.movable()) {
             addRenderableWidget(Button.builder(Component.literal("-"), b -> changeScale(-SCALE_STEP)).bounds(x, y, 20, 20).build());
             addRenderableWidget(Button.builder(Component.literal("+"), b -> changeScale(SCALE_STEP)).bounds(x + w - 20, y, 20, 20).build());
             y += ROW;
         }
         if (selected.restyleable()) {
-            y = panelButton(x, y, w, "Style: " + l.style.label, () -> working.edit(selected).style = l.style.next());
-            if (l.style != Style.VANILLA) y = panelButton(x, y, w, "Colour", this::nextColour);
+            y = panelButton(x, y, w, I18n.get("huddable.editor.panel.style", l.style.label()),
+                () -> working.edit(selected).style = l.style.next());
+            if (l.style != Style.VANILLA) y = panelButton(x, y, w, I18n.get("huddable.editor.panel.colour"), this::nextColour);
             if (l.style == Style.BAR) {
                 addRenderableWidget(Button.builder(Component.literal("-"), b -> changeBar(-SIZE_STEP, 0)).bounds(x, y, 20, 20).build());
                 addRenderableWidget(Button.builder(Component.literal("+"), b -> changeBar(SIZE_STEP, 0)).bounds(x + w - 20, y, 20, 20).build());
@@ -237,14 +242,15 @@ public class LayoutEditorScreen extends Screen {
                 addRenderableWidget(Button.builder(Component.literal("-"), b -> changeBar(0, -1)).bounds(x, y, 20, 20).build());
                 addRenderableWidget(Button.builder(Component.literal("+"), b -> changeBar(0, 1)).bounds(x + w - 20, y, 20, 20).build());
                 y += ROW;
-                y = panelButton(x, y, w, "Text: " + (l.showText ? "On" : "Off"), () -> working.edit(selected).showText = !l.showText);
+                y = panelButton(x, y, w, I18n.get(l.showText ? "huddable.editor.panel.text.on" : "huddable.editor.panel.text.off"),
+                    () -> working.edit(selected).showText = !l.showText);
             }
         }
         if (HudFonts.fontable(selected, l)) {
-            y = panelButton(x, y, w, "Font: " + fontName(l.font, true), () -> openFontList(selected));
+            y = panelButton(x, y, w, I18n.get("huddable.editor.panel.font", fontName(l.font, true)), () -> openFontList(selected));
         }
-        y = panelButton(x, y, w, "Reset element", () -> working.reset(selected));
-        y = panelButton(x, y, w, "Close", () -> selected = null);
+        y = panelButton(x, y, w, I18n.get("huddable.editor.panel.reset"), () -> working.reset(selected));
+        y = panelButton(x, y, w, I18n.get("huddable.editor.close"), () -> selected = null);
         panelHeight = y - panelY + 2;
     }
 
@@ -256,8 +262,8 @@ public class LayoutEditorScreen extends Screen {
 
     /** A font choice's name: {@code null} is the profile font for an element, vanilla's for the profile. */
     private static String fontName(String id, boolean element) {
-        if (id == null) return element ? "Profile" : "Vanilla";
-        return id.equals(HudFonts.DEFAULT_FONT) ? "Vanilla" : id;
+        if (id == null) return I18n.get(element ? "huddable.editor.font.profile" : "huddable.editor.font.vanilla");
+        return id.equals(HudFonts.DEFAULT_FONT) ? I18n.get("huddable.editor.font.vanilla") : id;
     }
 
     /**
@@ -298,7 +304,8 @@ public class LayoutEditorScreen extends Screen {
             }).bounds(x + w - 20, y, 20, 20).build()).active = fontPage < pages - 1;
             y += ROW;
         }
-        y = panelButton(x, y, w, fontTarget != null ? "Back" : "Close", () -> pickingFont = false);
+        y = panelButton(x, y, w, I18n.get(fontTarget != null ? "huddable.editor.back" : "huddable.editor.close"),
+            () -> pickingFont = false);
         panelHeight = y - panelY + 2;
     }
 
@@ -314,9 +321,11 @@ public class LayoutEditorScreen extends Screen {
     }
 
     private String fontTip(String id, List<String> available) {
-        if (id == null) return "Use the profile font (toolbar Font button)";
-        if (id.equals(HudFonts.DEFAULT_FONT)) return "Minecraft's own font" + (fontTarget != null ? ", even when the profile has another" : "");
-        return id + (available.contains(id) ? "" : "\nIts resource pack is off, so this draws in vanilla's font");
+        if (id == null) return I18n.get("huddable.editor.font.profile.tooltip");
+        if (id.equals(HudFonts.DEFAULT_FONT)) {
+            return I18n.get(fontTarget != null ? "huddable.editor.font.vanilla.element_tooltip" : "huddable.editor.font.vanilla.tooltip");
+        }
+        return available.contains(id) ? id : I18n.get("huddable.editor.font.pack_off", id);
     }
 
     private void setFont(String id) {
@@ -381,7 +390,7 @@ public class LayoutEditorScreen extends Screen {
     }
 
     private void rename() {
-        if (renaming && !Profiles.renameActive(nameBox.getValue())) setStatus("That name is taken");
+        if (renaming && !Profiles.renameActive(nameBox.getValue())) setStatus(I18n.get("huddable.editor.status.name_taken"));
         renaming = !renaming;
         rebuildWidgets();
     }
@@ -390,7 +399,7 @@ public class LayoutEditorScreen extends Screen {
         if (confirmDelete) {
             Profiles.deleteActive();
             loadWorking();
-            setStatus("Profile deleted");
+            setStatus(I18n.get("huddable.editor.status.deleted"));
         }
         confirmDelete = !confirmDelete;
         rebuildWidgets();
@@ -398,20 +407,20 @@ public class LayoutEditorScreen extends Screen {
 
     private void exportLayout() {
         minecraft.keyboardHandler.setClipboard(working.toCode());
-        setStatus("Layout code copied to the clipboard");
+        setStatus(I18n.get("huddable.editor.status.exported"));
     }
 
     private void importLayout() {
         Layout imported = Layout.fromCode(minecraft.keyboardHandler.getClipboard());
         if (imported == null) {
-            setStatus("The clipboard has no Huddable code (HUD1:...)");
+            setStatus(I18n.get("huddable.editor.status.no_code"));
             return;
         }
         saveWorking();
         String name = Profiles.create("Imported", imported);
         loadWorking();
         rebuildWidgets();
-        setStatus("Imported as " + name);
+        setStatus(I18n.get("huddable.editor.status.imported", name));
     }
 
     private void resetAll() {
@@ -472,7 +481,7 @@ public class LayoutEditorScreen extends Screen {
                 }
             }
             if (!live || focus || element == hovered || l.hidden) {
-                String label = element.label() + (l.hidden ? " (hidden)" : "");
+                String label = l.hidden ? I18n.get("huddable.editor.element.hidden", element.label()) : element.label();
                 int labelY = b.y() >= 10 ? b.y() - 10 : b.y() + b.height() + 2;
                 context.text(font, label, b.x(), labelY, 0xFFFFFFFF, true);
             }
@@ -488,20 +497,19 @@ public class LayoutEditorScreen extends Screen {
         // Grip dots: the title strip drags the controls.
         context.fill(toolbarX + TOOLBAR_WIDTH - 12, toolbarY + 4, toolbarX + TOOLBAR_WIDTH - 4, toolbarY + 5, 0xFF888888);
         context.fill(toolbarX + TOOLBAR_WIDTH - 12, toolbarY + 7, toolbarX + TOOLBAR_WIDTH - 4, toolbarY + 8, 0xFF888888);
-        String hint = live
-            ? "Drag to move (Shift: no snap), corner to scale, edge to resize, right-click for options, Elements to show/hide"
-            : "Join a world for a live preview. Drag to move, corner to scale, edge to resize, right-click for options";
+        String hint = I18n.get(live ? "huddable.editor.hint.live" : "huddable.editor.hint.preview");
         if (status != null && Util.getMillis() < statusUntil) hint = status;
         context.text(font, font.plainSubstrByWidth(hint, width - 8), 4, height - 12, GOLD, true);
 
         if (showList) {
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
             context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
-            context.text(font, "HUD elements", panelX + 4, panelY + 4, GOLD, false);
+            context.text(font, Component.translatable("huddable.editor.list.title"), panelX + 4, panelY + 4, GOLD, false);
         } else if (pickingFont) {
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
             context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
-            String title = fontTarget != null ? "Font: " + fontTarget.label() : "Profile font";
+            String title = fontTarget != null ? I18n.get("huddable.editor.panel.font", fontTarget.label())
+                : I18n.get("huddable.editor.font.profile_title");
             context.text(font, font.plainSubstrByWidth(title, panelWidth - 8), panelX + 4, panelY + 4, GOLD, false);
         } else if (selected != null) {
             ElementLayout l = working.get(selected);
@@ -511,7 +519,7 @@ public class LayoutEditorScreen extends Screen {
             // Values between the -/+ buttons, on the rows buildPanel laid out.
             int y = panelY + 16 + ROW;
             if (selected.movable()) {
-                centred(context, "Scale " + l.scale + "%", y);
+                centred(context, I18n.get("huddable.editor.panel.scale", l.scale), y);
                 y += ROW;
             }
             if (selected.restyleable()) {
@@ -525,8 +533,8 @@ public class LayoutEditorScreen extends Screen {
                     y += ROW;
                 }
                 if (l.style == Style.BAR) {
-                    centred(context, "Width " + l.barWidth, y);
-                    centred(context, "Height " + l.barHeight, y + ROW);
+                    centred(context, I18n.get("huddable.editor.panel.width", l.barWidth), y);
+                    centred(context, I18n.get("huddable.editor.panel.height", l.barHeight), y + ROW);
                 }
             }
         }

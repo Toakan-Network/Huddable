@@ -2,6 +2,7 @@ package huddable;
 
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
 
 /**
  * How the whole HUD's size follows the screen, set per profile. The same three modes and maths as Skyblock
@@ -9,16 +10,21 @@ import net.minecraft.client.Minecraft;
  */
 public enum Sizing {
     /** Vanilla: elements follow Minecraft's GUI Scale. */
-    GUI_SCALE("GUI"),
+    GUI_SCALE("huddable.sizing.gui_scale"),
     /** Size follows the window height; 100% is the size at GUI Scale 2 in a 1080p window. */
-    WINDOW("Window"),
+    WINDOW("huddable.sizing.window"),
     /** The same size on screen at any GUI Scale. */
-    FIXED("Fixed");
+    FIXED("huddable.sizing.fixed");
 
-    public final String label;
+    /** Lang key of the name shown in the editor. */
+    private final String labelKey;
 
-    Sizing(String label) {
-        this.label = label;
+    Sizing(String labelKey) {
+        this.labelKey = labelKey;
+    }
+
+    public String label() {
+        return I18n.get(labelKey);
     }
 
     public Sizing next() {

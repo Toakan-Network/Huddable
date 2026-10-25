@@ -57,7 +57,6 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - A global theme: border, background and colour scheme for every element and widget (the profile font, 0.3.0,
   is its first part).
 - Fonts for other mods' layers: they read the font themselves, so it needs their support (an API hook).
-- Lang files (en_us.json) for every mod at once; until then UI strings are literals.
 - Full UI presets (NaowhUI style) shipped with the mod and shareable as codes.
 - Keyboard nudging in the editor (arrow keys, read through `HuddableClient.inputCode`).
 - Moving whole container windows: `AbstractContainerScreen` has `protected int leftPos, topPos` in both 26.2 and

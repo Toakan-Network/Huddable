@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.numbers.StyledFormat;
 import net.minecraft.resources.Identifier;
@@ -27,28 +28,28 @@ import net.minecraft.world.scores.Scoreboard;
  * on live state it is measured the way vanilla measures it, or a typical size when that state isn't readable.
  */
 public enum Element implements HudPart {
-    HOTBAR(VanillaHudElements.HOTBAR, "Hotbar", true, false, false, true),
-    HEALTH_BAR(VanillaHudElements.HEALTH_BAR, "Health", true, true, false, true),
-    ARMOR_BAR(VanillaHudElements.ARMOR_BAR, "Armor", true, true, false, true),
-    FOOD_BAR(VanillaHudElements.FOOD_BAR, "Hunger", true, true, true, true),
-    AIR_BAR(VanillaHudElements.AIR_BAR, "Air", true, true, true, true),
-    MOUNT_HEALTH(VanillaHudElements.MOUNT_HEALTH, "Mount health", true, false, true, false),
-    INFO_BAR(VanillaHudElements.INFO_BAR, "Experience bar", true, false, false, false),
-    EXPERIENCE_LEVEL(VanillaHudElements.EXPERIENCE_LEVEL, "Experience level", true, false, false, true),
-    HELD_ITEM_TOOLTIP(VanillaHudElements.HELD_ITEM_TOOLTIP, "Held item name", true, false, false, true),
-    MOB_EFFECTS(VanillaHudElements.MOB_EFFECTS, "Effects", true, false, false, false),
-    BOSS_BAR(VanillaHudElements.BOSS_BAR, "Boss bar", true, false, false, true),
-    SCOREBOARD(VanillaHudElements.SCOREBOARD, "Scoreboard", true, false, false, true),
-    OVERLAY_MESSAGE(VanillaHudElements.OVERLAY_MESSAGE, "Action bar", true, false, false, true),
-    TITLE_AND_SUBTITLE(VanillaHudElements.TITLE_AND_SUBTITLE, "Title", true, false, false, true),
-    PLAYER_LIST(VanillaHudElements.PLAYER_LIST, "Tab list", true, false, false, true),
-    CROSSHAIR(VanillaHudElements.CROSSHAIR, "Crosshair", true, false, false, false),
-    SUBTITLES(VanillaHudElements.SUBTITLES, "Subtitles", true, false, false, true),
+    HOTBAR(VanillaHudElements.HOTBAR, "huddable.element.hotbar", true, false, false, true),
+    HEALTH_BAR(VanillaHudElements.HEALTH_BAR, "huddable.element.health_bar", true, true, false, true),
+    ARMOR_BAR(VanillaHudElements.ARMOR_BAR, "huddable.element.armor_bar", true, true, false, true),
+    FOOD_BAR(VanillaHudElements.FOOD_BAR, "huddable.element.food_bar", true, true, true, true),
+    AIR_BAR(VanillaHudElements.AIR_BAR, "huddable.element.air_bar", true, true, true, true),
+    MOUNT_HEALTH(VanillaHudElements.MOUNT_HEALTH, "huddable.element.mount_health", true, false, true, false),
+    INFO_BAR(VanillaHudElements.INFO_BAR, "huddable.element.info_bar", true, false, false, false),
+    EXPERIENCE_LEVEL(VanillaHudElements.EXPERIENCE_LEVEL, "huddable.element.experience_level", true, false, false, true),
+    HELD_ITEM_TOOLTIP(VanillaHudElements.HELD_ITEM_TOOLTIP, "huddable.element.held_item_tooltip", true, false, false, true),
+    MOB_EFFECTS(VanillaHudElements.MOB_EFFECTS, "huddable.element.mob_effects", true, false, false, false),
+    BOSS_BAR(VanillaHudElements.BOSS_BAR, "huddable.element.boss_bar", true, false, false, true),
+    SCOREBOARD(VanillaHudElements.SCOREBOARD, "huddable.element.scoreboard", true, false, false, true),
+    OVERLAY_MESSAGE(VanillaHudElements.OVERLAY_MESSAGE, "huddable.element.overlay_message", true, false, false, true),
+    TITLE_AND_SUBTITLE(VanillaHudElements.TITLE_AND_SUBTITLE, "huddable.element.title_and_subtitle", true, false, false, true),
+    PLAYER_LIST(VanillaHudElements.PLAYER_LIST, "huddable.element.player_list", true, false, false, true),
+    CROSSHAIR(VanillaHudElements.CROSSHAIR, "huddable.element.crosshair", true, false, false, false),
+    SUBTITLES(VanillaHudElements.SUBTITLES, "huddable.element.subtitles", true, false, false, true),
     // Moved by ChatComponentMixin rather than HudWrapper, so the open chat and its clicks move too.
-    CHAT(VanillaHudElements.CHAT, "Chat", true, false, false, true),
+    CHAT(VanillaHudElements.CHAT, "huddable.element.chat", true, false, false, true),
     // Not a Fabric HUD element (no ID): moved by GuiToastsMixin around vanilla's toast drawing, which also
     // covers Fancy Notify's notifications, as Fancy Notify draws them from inside that call.
-    TOASTS(null, "Toasts", true, false, false, true);
+    TOASTS(null, "huddable.element.toasts", true, false, false, true);
 
     /** Vanilla's distance from the bottom of the screen to the top of the first status bar row. */
     private static final int STATUS_LINE = 39;
@@ -57,7 +58,8 @@ public enum Element implements HudPart {
     public static final int CHAT_BOTTOM_OFFSET = 40;
 
     public final Identifier id;
-    public final String label;
+    /** Lang key of the element's name. */
+    public final String labelKey;
     public final boolean movable;
     public final boolean restyleable;
     /** Status bars on the right of the hotbar fill from the right, so a restyled one is right-aligned. */
@@ -65,9 +67,9 @@ public enum Element implements HudPart {
     /** Draws text that {@link HudFonts} can put in another font (a status bar only when restyled). */
     public final boolean fontable;
 
-    Element(Identifier id, String label, boolean movable, boolean restyleable, boolean rightAligned, boolean fontable) {
+    Element(Identifier id, String labelKey, boolean movable, boolean restyleable, boolean rightAligned, boolean fontable) {
         this.id = id;
-        this.label = label;
+        this.labelKey = labelKey;
         this.movable = movable;
         this.restyleable = restyleable;
         this.rightAligned = rightAligned;
@@ -81,7 +83,7 @@ public enum Element implements HudPart {
 
     @Override
     public String label() {
-        return label;
+        return I18n.get(labelKey);
     }
 
     @Override

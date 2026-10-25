@@ -25,11 +25,11 @@ public class HuddableScreen extends Screen {
     protected void init() {
         int x = (width - BUTTON_WIDTH) / 2;
         int y = height / 2 - 34;
-        addRenderableWidget(Button.builder(Component.literal("HUD Designer"), b -> minecraft.gui.setScreen(new LayoutEditorScreen(this)))
-            .tooltip(Tooltip.create(Component.literal("Move, scale, hide and restyle HUD elements, pick their fonts, and manage layout profiles")))
+        addRenderableWidget(Button.builder(Component.translatable("huddable.hub.designer"), b -> minecraft.gui.setScreen(new LayoutEditorScreen(this)))
+            .tooltip(Tooltip.create(Component.translatable("huddable.hub.designer.tooltip")))
             .bounds(x, y, BUTTON_WIDTH, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("General Settings"), b -> minecraft.gui.setScreen(new GeneralSettingsScreen(this)))
-            .tooltip(Tooltip.create(Component.literal("Settings for the whole game, not one profile, such as font quality")))
+        addRenderableWidget(Button.builder(Component.translatable("huddable.hub.general"), b -> minecraft.gui.setScreen(new GeneralSettingsScreen(this)))
+            .tooltip(Tooltip.create(Component.translatable("huddable.hub.general.tooltip")))
             .bounds(x, y + 24, BUTTON_WIDTH, 20).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).bounds(x, y + 60, BUTTON_WIDTH, 20).build());
     }

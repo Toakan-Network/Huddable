@@ -16,19 +16,18 @@ public class GeneralSettingsScreen extends OptionsSubScreen {
     private int oversample;
 
     public GeneralSettingsScreen(Screen parent) {
-        super(parent, Minecraft.getInstance().options,Component.literal("Huddable: General Settings"));
+        super(parent, Minecraft.getInstance().options, Component.translatable("huddable.general.title"));
         startOversample = GeneralSettings.get().fontOversample;
         oversample = startOversample;
     }
 
     @Override
     protected void addOptions() {
-        list.addBig(new OptionInstance<>("Font quality",
-            OptionInstance.cachedConstantTooltip(Component.literal(
-                "How sharp TrueType fonts from resource packs are drawn (their oversample). Higher is sharper at "
-                    + "large GUI scales but uses more video memory; Pack's own uses each pack's setting. Applies "
-                    + "to every mod's fonts, not just Huddable's, and reloads the resource packs when you leave.")),
-            (caption, value) -> Options.genericValueLabel(caption, Component.literal(value == 0 ? "Pack's own" : value + "x")),
+        list.addBig(new OptionInstance<>("huddable.general.font_quality",
+            OptionInstance.cachedConstantTooltip(Component.translatable("huddable.general.font_quality.desc")),
+            (caption, value) -> Options.genericValueLabel(caption, value == 0
+                ? Component.translatable("huddable.general.font_quality.pack")
+                : Component.translatable("huddable.general.font_quality.value", value)),
             new OptionInstance.IntRange(0, GeneralSettings.MAX_FONT_OVERSAMPLE),
             oversample,
             value -> oversample = value));

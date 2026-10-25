@@ -1,20 +1,27 @@
 package huddable;
 
+import net.minecraft.client.resources.language.I18n;
+
 /** How a restyleable bar (health, food, armor, air) is drawn. */
 public enum Style {
     /** Vanilla's own icons, only moved and scaled. */
-    VANILLA("Vanilla"),
+    VANILLA("huddable.style.vanilla"),
     /** A filled bar. */
-    BAR("Bar"),
+    BAR("huddable.style.bar"),
     /** Text such as "18/20". */
-    NUMBER("Number"),
+    NUMBER("huddable.style.number"),
     /** One vanilla icon followed by the number. */
-    ICON_NUMBER("Icon + number");
+    ICON_NUMBER("huddable.style.icon_number");
 
-    public final String label;
+    /** Lang key of the name shown in the editor. */
+    private final String labelKey;
 
-    Style(String label) {
-        this.label = label;
+    Style(String labelKey) {
+        this.labelKey = labelKey;
+    }
+
+    public String label() {
+        return I18n.get(labelKey);
     }
 
     public Style next() {
