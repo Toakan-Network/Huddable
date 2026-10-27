@@ -23,6 +23,7 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   (`ChatComponentMixin`); a font list in the editor that previews each font; Mod Menu's Configure opens a hub with
   HUD Designer and General Settings (vanilla options list), whose Font quality sets every TTF font's oversample
   (`TrueTypeOversampleMixin`, default 4x, reload on leave). The dev client starts with all mixins applied.
+- 0.3.3: queued saves are flushed when the game closes (Done then quitting at once kept nothing).
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.

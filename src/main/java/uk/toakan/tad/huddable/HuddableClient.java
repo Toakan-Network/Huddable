@@ -43,6 +43,8 @@ public final class HuddableClient implements ClientModInitializer {
             }
         }
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> HudDiscovery.discover());
+        // Saves run on a background thread; make sure the last ones reach the disk before the game closes.
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> JsonFiles.flush());
         // After the fonts reload (resource packs, F3+T, font quality), which fonts exist and their widths may change.
         Identifier fontsReloaded = Identifier.fromNamespaceAndPath(MOD_ID, "hud_fonts");
         ResourceLoader resources = ResourceLoader.get(PackType.CLIENT_RESOURCES);
