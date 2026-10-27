@@ -35,6 +35,9 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   (each toolbar drag step).
 - 0.3.10: `inputCode` looks each key code up once (same helper as ChatTabs and Shopping List).
 - 0.3.11: share codes import with line breaks or spaces in them (as Discord wraps long codes).
+- 0.4.0: meowdding-lib overlays (SkyCubed, SkyOcean) placed one by one: each is an API part, and an optional
+  mixin (`mixin.meowdding`, applied only with meowdding-lib loaded) moves its draw call inside meowdding's
+  overlay loop. General Settings has an Advanced toggle to turn it off.
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
@@ -55,6 +58,10 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   Hypixel icons keeping their font, chat re-wrapping and its clicks/hovers in a new font, restyled bar numbers,
   toasts), the font list paging, a profile font from a disabled pack falling back, share codes keeping fonts,
   Font quality reloading once and surviving a restart.
+
+- 0.4.0: meowdding overlays on SkyBlock with SkyCubed: listed with stable IDs, boxes matching what they draw
+  (RPG overlay, text overlays, alignment END/CENTER), moving, scaling and hiding them, the profile screen scale,
+  the Advanced toggle off and on, and meowdding's own editor still working alongside.
 
 ## Next (ElvUI direction)
 - Shopping List on Huddable: register its five panels through the API (resizable), hand its Move HUD to

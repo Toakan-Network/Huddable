@@ -2,6 +2,7 @@ package uk.toakan.tad.huddable;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import uk.toakan.tad.huddable.api.HuddablePlugin;
+import uk.toakan.tad.huddable.compat.MeowddingCompat;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
@@ -47,7 +48,10 @@ public final class HuddableClient implements ClientModInitializer {
                 LOGGER.error("Huddable plugin from {} failed", plugin.getProvider().getMetadata().getId(), e);
             }
         }
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> HudDiscovery.discover());
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            HudDiscovery.discover();
+            MeowddingCompat.start();
+        });
         // Saves run on a background thread; make sure the last ones reach the disk before the game closes.
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> JsonFiles.flush());
         // After the fonts reload (resource packs, F3+T, font quality), which fonts exist and their widths may change.

@@ -29,6 +29,12 @@ public final class Parts {
         if (!part.isFabric()) CLAIMED.add(part.id);
     }
 
+    /** Takes a part out of the editor; its saved layouts stay in the profiles. */
+    public static void remove(Identifier id) {
+        EXTERNAL.removeIf(p -> p.id.equals(id));
+        CLAIMED.remove(id);
+    }
+
     public static void ignore(Identifier fabricLayerId) {
         CLAIMED.add(fabricLayerId);
     }

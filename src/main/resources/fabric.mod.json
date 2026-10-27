@@ -18,7 +18,8 @@
 		]
 	},
 	"mixins": [
-		"huddable.mixins.json"
+		"huddable.mixins.json",
+		"huddable.meowdding.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.5",

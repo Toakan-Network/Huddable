@@ -23,6 +23,8 @@ public final class GeneralSettings {
     public String active = Profiles.DEFAULT_NAME;
     /** Oversample for every TrueType font, or 0 for the pack's own. Read on font-loading threads. */
     public volatile int fontOversample = DEFAULT_FONT_OVERSAMPLE;
+    /** Advanced: list meowdding-lib's overlays (SkyCubed, SkyOcean) as parts and move their drawing. */
+    public boolean meowddingOverlays = true;
     /**
      * 0 in files from before 0.3.4, so their old default can be moved once. No initializer: Gson runs the
      * constructor, so one would also fill it in for old files.
@@ -62,6 +64,7 @@ public final class GeneralSettings {
         GeneralSettings copy = new GeneralSettings();
         copy.active = s.active;
         copy.fontOversample = s.fontOversample;
+        copy.meowddingOverlays = s.meowddingOverlays;
         copy.settingsVersion = s.settingsVersion;
         JsonFiles.writeAsync(FILE, () -> copy);
     }

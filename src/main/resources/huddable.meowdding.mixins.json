@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "uk.toakan.tad.huddable.mixin.meowdding",
+  "plugin": "uk.toakan.tad.huddable.mixin.meowdding.MeowddingMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "OverlaysAccessor",
+    "OverlaysMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}
