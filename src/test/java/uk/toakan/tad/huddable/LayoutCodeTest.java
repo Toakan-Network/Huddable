@@ -33,6 +33,19 @@ class LayoutCodeTest {
     }
 
     @Test
+    void codeWithLineBreaksImports() {
+        Layout layout = new Layout();
+        layout.edit(Element.HOTBAR).dy = -30;
+        String code = layout.toCode();
+        // As a long code comes back from Discord: wrapped, with a stray space.
+        String wrapped = code.substring(0, 12) + "\n" + code.substring(12, 20) + " " + code.substring(20);
+
+        Layout back = Layout.fromCode(wrapped);
+
+        assertEquals(-30, back.get(Element.HOTBAR).dy);
+    }
+
+    @Test
     void importClampsBadValues() {
         Layout layout = new Layout();
         ElementLayout hotbar = layout.edit(Element.HOTBAR);
