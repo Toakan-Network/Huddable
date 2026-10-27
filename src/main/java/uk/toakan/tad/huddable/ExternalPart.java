@@ -145,7 +145,9 @@ public final class ExternalPart implements HudPart {
         Minecraft mc = Minecraft.getInstance();
         Geometry g = geometry(mc, w, h);
         int[] size = size(mc, g, layout);
-        return new HuddableApi.Placement(g.x() + layout.dx, g.y() + layout.dy, size[0], size[1],
+        float offsetScale = HudWrapper.offsetScale();
+        return new HuddableApi.Placement(g.x() + Math.round(layout.dx * offsetScale),
+            g.y() + Math.round(layout.dy * offsetScale), size[0], size[1],
             HudWrapper.scale(this, layout), layout.hidden);
     }
 

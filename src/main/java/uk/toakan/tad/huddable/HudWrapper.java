@@ -94,9 +94,20 @@ public final class HudWrapper {
         return part.baseScale() * layout.scaleFactor() * Profiles.current().sizing.factor();
     }
 
+    /**
+     * What offsets are multiplied by: Window and Fixed sizing move elements as well as sizing them, so a layout
+     * keeps its shape when the window or GUI Scale changes.
+     */
+    public static float offsetScale() {
+        Layout layout = Profiles.current();
+        if (layout.offsetFactor <= 0) Profiles.recordOffsetFactor(layout);
+        return layout.offsetScale(layout.sizing.factor());
+    }
+
     /** Moves the anchor by the layout's offset and scales around it. */
     public static void transform(Matrix3x2f pose, int anchorX, int anchorY, ElementLayout layout, float scale) {
-        pose.translate(anchorX + layout.dx, anchorY + layout.dy);
+        float offsetScale = offsetScale();
+        pose.translate(anchorX + layout.dx * offsetScale, anchorY + layout.dy * offsetScale);
         pose.scale(scale, scale);
         pose.translate(-anchorX, -anchorY);
     }
@@ -121,8 +132,9 @@ public final class HudWrapper {
             height = size[1];
         }
         float scale = scale(part, layout);
-        int left = Math.round(g.anchorX() + layout.dx + (x - g.anchorX()) * scale);
-        int top = Math.round(g.anchorY() + layout.dy + (y - g.anchorY()) * scale);
+        float offsetScale = offsetScale();
+        int left = Math.round(g.anchorX() + layout.dx * offsetScale + (x - g.anchorX()) * scale);
+        int top = Math.round(g.anchorY() + layout.dy * offsetScale + (y - g.anchorY()) * scale);
         return new Box(left, top, Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
     }
 }

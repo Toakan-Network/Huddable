@@ -113,6 +113,8 @@ public class LayoutEditorScreen extends Screen {
 
     @Override
     protected void init() {
+        // Offsets in plain GUI pixels while editing (opened, profile changed, window resized), so dragging is exact.
+        working.rebaseOffsets(working.sizing.factor());
         // A rebuild (resize, toolbar moved) keeps a half-typed name.
         String draft = renaming && nameBox != null ? nameBox.getValue() : Profiles.activeName();
         if (toolbarX < 0) {
@@ -153,6 +155,8 @@ public class LayoutEditorScreen extends Screen {
         y = toolbarButton(x, y, I18n.get("huddable.editor.size", working.sizing.label()),
             I18n.get("huddable.editor.size.tooltip"), () -> {
             working.sizing = working.sizing.next();
+            // Elements stay where they are; only their size changes.
+            working.offsetFactor = working.sizing.factor();
             rebuildWidgets();
         });
         y = toolbarButton(x, y, I18n.get("huddable.editor.new"), I18n.get("huddable.editor.new.tooltip"), this::newProfile);
@@ -428,6 +432,7 @@ public class LayoutEditorScreen extends Screen {
     private void resetAll() {
         working.elements.clear();
         working.sizing = Sizing.GUI_SCALE;
+        working.offsetFactor = working.sizing.factor();
         working.font = null;
         selected = null;
         pickingFont = false;

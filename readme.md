@@ -28,6 +28,9 @@ whatever you're placing; it stays where you left it until the game closes.
   - **GUI** (default): follows Minecraft's GUI Scale, like vanilla.
   - **Window:** grows and shrinks with the window height.
   - **Fixed:** the same size on screen at any GUI Scale.
+
+  With Window and Fixed, positions move with the size too, so the layout keeps its shape when the window or GUI
+  Scale changes. Switching mode in the editor keeps elements where they are and only changes their size.
 - **Font:** the profile's font, picked from every font your resource packs provide (each shown in itself).
   Every element that draws text uses it unless you give that element its own (see Fonts below).
 - **Move:** drag an element. It snaps to the screen edges and centre and to other elements' edges and centres

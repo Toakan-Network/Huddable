@@ -21,6 +21,11 @@ public final class Layout {
 
     public Map<String, ElementLayout> elements = new LinkedHashMap<>();
     public Sizing sizing = Sizing.GUI_SCALE;
+    /**
+     * The {@link Sizing#factor()} the offsets were placed at, so they grow and shrink with the elements when the
+     * window or GUI Scale changes; 0 = not recorded yet (files and codes from before), taken on the first frame.
+     */
+    public float offsetFactor;
     /** The profile's font for every element that has no font of its own; null = vanilla's ({@link HudFonts}). */
     public String font;
 
@@ -60,8 +65,29 @@ public final class Layout {
         Layout c = new Layout();
         elements.forEach((k, v) -> c.elements.put(k, v.copy()));
         c.sizing = sizing;
+        c.offsetFactor = offsetFactor;
         c.font = font;
         return c;
+    }
+
+    /** What the saved offsets are multiplied by at sizing factor {@code current}. */
+    public float offsetScale(float current) {
+        return offsetFactor > 0 ? current / offsetFactor : 1f;
+    }
+
+    /**
+     * Rewrites the offsets as placed at sizing factor {@code current}, keeping where they draw, so the editor can
+     * work in plain GUI pixels.
+     */
+    public void rebaseOffsets(float current) {
+        float ratio = offsetScale(current);
+        if (ratio != 1f) {
+            for (ElementLayout l : elements.values()) {
+                l.dx = Math.round(l.dx * ratio);
+                l.dy = Math.round(l.dy * ratio);
+            }
+        }
+        offsetFactor = current;
     }
 
     /**
@@ -72,6 +98,7 @@ public final class Layout {
     public Layout clamp() {
         if (elements == null) elements = new LinkedHashMap<>();
         if (sizing == null) sizing = Sizing.GUI_SCALE;
+        if (!(offsetFactor >= 0.05f && offsetFactor <= 20f)) offsetFactor = 0;
         font = HudFonts.cleanId(font);
         if (HudFonts.DEFAULT_FONT.equals(font)) font = null;
         Map<String, ElementLayout> kept = new LinkedHashMap<>();
