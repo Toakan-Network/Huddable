@@ -9,7 +9,11 @@ import net.fabricmc.loader.api.FabricLoader;
  * so {@link #clamp} fills them in.
  */
 public final class GeneralSettings {
-    public static final int DEFAULT_FONT_OVERSAMPLE = 4;
+    /** Each pack's own oversample, as vanilla. */
+    public static final int DEFAULT_FONT_OVERSAMPLE = 0;
+    /** Before 0.3.4 the default was 4; a 4 saved by then is taken as that default and moved to the new one. */
+    private static final int OLD_DEFAULT_FONT_OVERSAMPLE = 4;
+    private static final int SETTINGS_VERSION = 1;
     /** Font quality's highest setting; 0 means each resource pack's own oversample. */
     public static final int MAX_FONT_OVERSAMPLE = 16;
 
@@ -19,6 +23,11 @@ public final class GeneralSettings {
     public String active = Profiles.DEFAULT_NAME;
     /** Oversample for every TrueType font, or 0 for the pack's own. Read on font-loading threads. */
     public volatile int fontOversample = DEFAULT_FONT_OVERSAMPLE;
+    /**
+     * 0 in files from before 0.3.4, so their old default can be moved once. No initializer: Gson runs the
+     * constructor, so one would also fill it in for old files.
+     */
+    public int settingsVersion;
 
     private GeneralSettings() {}
 
@@ -32,7 +41,16 @@ public final class GeneralSettings {
         synchronized (GeneralSettings.class) {
             if (current == null) {
                 GeneralSettings read = JsonFiles.read(FILE, GeneralSettings.class);
-                current = (read != null ? read : new GeneralSettings()).clamp();
+                if (read == null) {
+                    read = new GeneralSettings();
+                    read.settingsVersion = SETTINGS_VERSION;
+                }
+                current = read.clamp();
+                if (read.settingsVersion < SETTINGS_VERSION) {
+                    if (read.fontOversample == OLD_DEFAULT_FONT_OVERSAMPLE) read.fontOversample = DEFAULT_FONT_OVERSAMPLE;
+                    read.settingsVersion = SETTINGS_VERSION;
+                    save();
+                }
             }
             return current;
         }
@@ -44,6 +62,7 @@ public final class GeneralSettings {
         GeneralSettings copy = new GeneralSettings();
         copy.active = s.active;
         copy.fontOversample = s.fontOversample;
+        copy.settingsVersion = s.settingsVersion;
         JsonFiles.writeAsync(FILE, () -> copy);
     }
 

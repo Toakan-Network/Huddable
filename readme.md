@@ -91,8 +91,9 @@ Hunger and air bars drain from the left like vanilla's icons. The styles appear 
 bar (armor only with armor on, air only underwater or while it refills).
 
 ## General Settings
-- **Font quality** (default 4x): how sharp TrueType fonts from resource packs are drawn, their "oversample".
-  Higher is sharper at large GUI scales but uses more video memory; **Pack's own** uses what each pack sets.
+- **Font quality** (default **Pack's own**): how sharp TrueType fonts from resource packs are drawn, their
+  "oversample". **Pack's own** uses what each pack sets, as vanilla does; a higher value is sharper at large GUI
+  scales but uses more video memory. Players on the old 4x default were moved to Pack's own in 0.3.4.
   This applies to every TrueType font in the game, other mods' included, as Minecraft loads each font once for
   everyone. Changing it reloads the resource packs once when you leave the screen.
 
