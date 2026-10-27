@@ -15,9 +15,12 @@ public final class Parts {
 
     private Parts() {}
 
+    /** The parts the editor shows: other mods' ones only while {@link ExternalPart#listed}. */
     public static List<HudPart> all() {
         List<HudPart> parts = new ArrayList<>(List.of(Element.values()));
-        parts.addAll(EXTERNAL);
+        for (ExternalPart part : EXTERNAL) {
+            if (part.listed()) parts.add(part);
+        }
         return parts;
     }
 
@@ -27,6 +30,12 @@ public final class Parts {
         EXTERNAL.add(part);
         EXTERNAL.sort(Comparator.comparing(HudPart::label, String.CASE_INSENSITIVE_ORDER));
         if (!part.isFabric()) CLAIMED.add(part.id);
+    }
+
+    /** Takes a part out of the editor; its saved layouts stay in the profiles. */
+    public static void remove(Identifier id) {
+        EXTERNAL.removeIf(p -> p.id.equals(id));
+        CLAIMED.remove(id);
     }
 
     public static void ignore(Identifier fabricLayerId) {

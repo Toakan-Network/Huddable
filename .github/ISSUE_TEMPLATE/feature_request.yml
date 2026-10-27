@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest something new or a change to an existing feature.
+title: "Feature request: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Huddable is client-side and works on any server. It only changes where and how the HUD draws, so requests
+        that need server data or send anything to the server can't be added.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should the mod do?
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to lay out, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How it could work, for example in the editor, an element's options panel, or General Settings.
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes or blockers
+      description: Anything already known, e.g. another mod involved, or alternatives you considered.
+    validations:
+      required: false

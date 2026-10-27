@@ -6,6 +6,7 @@ Rearrange the vanilla HUD in game, no resource packs needed.
 - Scale elements from 25% to 400%, resize chat and bars by their edges, or hide them
 - Place other mods' HUD elements too (anything added through Fabric API's HUD registry), and toasts, Fancy
   Notify's notifications included
+- Place SkyCubed's and SkyOcean's overlays one by one (meowdding-lib overlays, can be turned off)
 - Window, GUI Scale or Fixed sizing for the whole HUD
 - Restyle health, hunger, armor and air as bars or numbers, in your own colours
 - Put the scoreboard, chat, tab list and other HUD text in any font from your resource packs, per profile or

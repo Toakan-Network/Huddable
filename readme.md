@@ -64,6 +64,14 @@ resize too. Positions are kept in the profile even if you remove the mod.
 at the corner set in Fancy Notify's options, and Huddable moves it from there. Hiding toasts also pauses Fancy
 Notify's notifications until you show them again.
 
+**meowdding overlays** (SkyCubed, SkyOcean and other mods built on meowdding-lib) are listed one by one under
+their mod's name, for example `SkyCubed: Health`, and move, scale and hide like the rest. Their box is the one
+meowdding's own overlay editor highlights. meowdding's own editor (dragging overlays with chat open) still works, but its
+highlight and clicks stay where meowdding places the overlay, so pick one editor per overlay. SkyCubed's Moveable
+Hotbar and Moveable Item Text aren't listed: SkyCubed draws those on the vanilla hotbar, which Huddable already
+places. Overlays switched off in their own mod aren't listed; switch them on there and they come back with
+their saved position. Turn this off under General Settings, Advanced.
+
 Other mods that draw their HUD some other way can't be moved until they support Huddable.
 
 ### Fonts
@@ -96,6 +104,9 @@ bar (armor only with armor on, air only underwater or while it refills).
   scales but uses more video memory. Players on the old 4x default were moved to Pack's own in 0.3.4.
   This applies to every TrueType font in the game, other mods' included, as Minecraft loads each font once for
   everyone. Changing it reloads the resource packs once when you leave the screen.
+- **Advanced, meowdding overlays** (default on, only shown with meowdding-lib installed): list meowdding-lib's
+  overlays as their own elements (see Other mods' HUD elements). Turned off, they go back to where meowdding puts
+  them and leave the editor; their saved positions are kept for when you turn it on again.
 
 Saved in `config/huddable/settings.json`, which also remembers the active profile.
 

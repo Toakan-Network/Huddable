@@ -27,6 +27,10 @@ repositories {
 		url = "https://maven.terraformersmc.com/releases"
 		content { includeGroup "com.terraformersmc" }
 	}
+	maven {
+		url = "https://maven.teamresourceful.com/repository/maven-public/"
+		content { includeGroupAndSubgroups "me.owdding" }
+	}
 }
 
 dependencies {
@@ -38,6 +42,13 @@ dependencies {
 	// Mod Menu (optional): its "Configure" button opens the layout editor. Only Mod Menu loads
 	// uk.toakan.tad.huddable.compat.ModMenuCompat (fabric.mod.json entrypoint).
 	compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}") { transitive = false }
+
+	// meowdding-lib (optional): its overlays are placed one by one. Only compat.MeowddingCompat and
+	// mixin.meowdding touch it, and that mixin config applies only when meowdding-lib is loaded.
+	compileOnly("me.owdding.meowdding-lib:meowdding-lib:${project.meowdding_lib_version}") {
+		transitive = false
+		capabilities { requireCapability("me.owdding.meowdding-lib:meowdding-lib-${project.minecraft_version}") }
+	}
 
 	// Unit tests for the plain logic (snapping, share codes); nothing here ships in the jar.
 	testImplementation platform("org.junit:junit-bom:5.14.2")

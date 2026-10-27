@@ -19,6 +19,13 @@ update it in the same commit when a step lands or an issue is found or fixed.
   `mixin.GuiToastsMixin`, wraps `Gui`'s one `ToastManager.extractRenderState` call: toasts aren't a Fabric HUD
   element, and Fancy Notify draws its notifications from a HEAD inject inside that call, so they move too. Add no
   other mixins without a reason like these.
+- meowdding-lib overlays (`compat.MeowddingCompat`): meowdding draws every overlay in one loop
+  (`Overlays.onHudRender`) inside SkyblockAPI's `RenderHudEvent`, fired from vanilla's sleep overlay, so they
+  aren't Fabric layers. Each overlay is registered as an API part, and `mixin.meowdding.OverlaysMixin` wraps the
+  loop's `Overlay.extract` call. That mixin config (`huddable.meowdding.mixins.json`) is optional: its plugin
+  applies it only when meowdding-lib is loaded, with `defaultRequire: 0`, so a meowdding change only turns the
+  compat off. meowdding-lib is `compileOnly`; only that class and package may touch it. General Settings'
+  Advanced toggle (`meowddingOverlays`) turns it off.
 - Fonts (`HudFonts`): vanilla prepares text after an element draws, with the `Font` it was given, so an element's
   font is a wrapper `Font` (built through `mixin.FontAccessor`) that sends the default font to the chosen one.
   `mixin.HudFontMixin` hands it to vanilla's HUD classes in place of `Minecraft.font` while `HudWrapper` (or
@@ -42,7 +49,7 @@ update it in the same commit when a step lands or an issue is found or fixed.
   types.
 - Fabric HUD API sources for checking names are in `..\.mc-sources\fabric-rendering-v1\<mc>\`; vanilla in
   `..\.mc-sources\<mc>\`.
-- Dependencies: Fabric API only. Mod Menu is optional (`compileOnly`, `suggests`) and is the only way to open
+- Dependencies: Fabric API only (meowdding-lib is compile-only, see above). Mod Menu is optional (`compileOnly`, `suggests`) and is the only way to open
   Huddable's screen (`HuddableScreen`: HUD Designer and General Settings); only `compat.ModMenuCompat` may touch
   its API.
 
@@ -52,6 +59,15 @@ As in CraftingTracker: `./gradlew build` builds `:mc26.2` and `:mc26.3` from the
 `huddable-<mod_version>+<mc>.jar`. Only use Minecraft and Fabric API members present in every supported version.
 - No `org.lwjgl.glfw`. Read `InputConstants` key and mouse codes with `HuddableClient.inputCode("MOUSE_BUTTON_LEFT")`;
   they differ between 26.2 and 26.3.
+
+## Branches and CI
+- Repo: `Toakan-Network/Huddable` (`origin`). Work happens on `dev`; `main` is what's released. Commit to `dev`
+  and leave merging into `main` to the user.
+- `.github/workflows/build.yml` builds both jars on pushes to `main` and `dev`, on pull requests, nightly and by
+  hand, and uploads `build/libs` as the `Artifacts` artifact.
+- `.github/workflows/publish.yml` runs when a GitHub release is published: the tag must equal `mod_version`
+  (`v` prefix allowed), then it builds and attaches the 26.2 and 26.3 jars to the release. GitHub only for now;
+  Modrinth and CurseForge can be added the way Shopping List's `publish.yml` does it.
 
 ## Testing in game
 Mod Menu isn't in the dev client, so test the editor in the live instance

@@ -5,6 +5,9 @@
   "huddable.hub.general.tooltip": "Settings for the whole game, not one profile, such as font quality",
 
   "huddable.general.title": "Huddable: General Settings",
+  "huddable.general.advanced": "Advanced",
+  "huddable.general.meowdding_overlays": "meowdding overlays",
+  "huddable.general.meowdding_overlays.desc": "List each overlay from meowdding-lib mods (SkyCubed, SkyOcean) as its own element, so you can move, scale and hide it. Turn off if they misbehave or you'd rather place them with their own editor.",
   "huddable.general.font_quality": "Font quality",
   "huddable.general.font_quality.desc": "How sharp TrueType fonts from resource packs are drawn (their oversample). Higher is sharper at large GUI scales but uses more video memory; Pack's own uses each pack's setting. Applies to every mod's fonts, not just Huddable's, and reloads the resource packs when you leave.",
   "huddable.general.font_quality.pack": "Pack's own",
