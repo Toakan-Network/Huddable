@@ -29,6 +29,7 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.3.5: the "(not showing)" label of an undrawn mod layer comes from the lang file.
 - 0.3.6: chat's size options are put back however the editor closes without Done (a disconnect too), not only
   on Cancel/Esc.
+- 0.3.7: switching profiles waits for queued saves, so switching away and straight back reads the latest file.
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.

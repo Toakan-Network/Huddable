@@ -78,6 +78,8 @@ public final class Profiles {
     }
 
     public static void switchTo(String name) {
+        // A save of that profile may still be queued (switching away and straight back); read what it wrote.
+        JsonFiles.flush();
         activeName = cleanName(name);
         active = read(activeName);
         saveSettings();
