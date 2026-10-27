@@ -87,6 +87,8 @@ public class LayoutEditorScreen extends Screen {
     /** Chat's size options when the editor opened, put back on Cancel; chat resizes through them. */
     private final double chatWidth;
     private final double chatHeight;
+    /** Set by Done, so closing keeps chat's new size. */
+    private boolean saved;
 
     /** Mid-edge resize grips. */
     private enum Edge { LEFT, RIGHT, TOP, BOTTOM }
@@ -433,6 +435,7 @@ public class LayoutEditorScreen extends Screen {
     }
 
     private void done() {
+        saved = true;
         saveWorking();
         if (chatResized()) minecraft.options.save();
         close();
@@ -760,13 +763,9 @@ public class LayoutEditorScreen extends Screen {
         return false;
     }
 
-    /** Cancel and Esc: the edits are dropped (the preview ends in {@link #removed}), and chat's size put back. */
+    /** Cancel and Esc: the edits are dropped and chat's size put back, both in {@link #removed}. */
     @Override
     public void onClose() {
-        if (chatResized()) {
-            minecraft.options.chatWidth().set(chatWidth);
-            minecraft.options.chatHeightUnfocused().set(chatHeight);
-        }
         close();
     }
 
@@ -774,9 +773,17 @@ public class LayoutEditorScreen extends Screen {
         minecraft.gui.setScreen(parent);
     }
 
+    /**
+     * However the editor closes (Cancel, Esc, a disconnect or another screen taking over), the preview ends and,
+     * unless Done saved them, chat's size options go back to what they were.
+     */
     @Override
     public void removed() {
         Profiles.setPreview(null);
+        if (!saved && chatResized()) {
+            minecraft.options.chatWidth().set(chatWidth);
+            minecraft.options.chatHeightUnfocused().set(chatHeight);
+        }
         super.removed();
     }
 }
