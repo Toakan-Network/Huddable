@@ -8,6 +8,7 @@
 		"Tad"
 	],
 	"license": "GPL-3.0-only",
+	"icon": "assets/huddable/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [
