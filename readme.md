@@ -151,7 +151,8 @@ public final class HuddableCompat implements HuddablePlugin {
         HuddableApi.register(PANEL, Component.literal("Example panel"),
             HuddableApi.Spec.of((screenWidth, screenHeight) -> new HuddableApi.Box(10, 10, 120, 40))
                 .withBaseScale(() -> MyHud.scale())  // optional: your own HUD scale
-                .resizable(60, 20));                  // optional: edge grips, with a minimum size
+                .resizable(60, 20)                    // optional: edge grips, with a minimum size
+                .listedWhen(() -> MyHud.enabled()));  // optional: left out of the editor while switched off
         // If the element is also a Fabric HUD layer, keep Huddable from wrapping that layer as well:
         // HuddableApi.ignoreLayer(MY_FABRIC_LAYER_ID);
     }

@@ -4,6 +4,7 @@ import uk.toakan.tad.huddable.ExternalPart;
 import uk.toakan.tad.huddable.LayoutEditorScreen;
 import uk.toakan.tad.huddable.Parts;
 import uk.toakan.tad.huddable.Profiles;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -36,18 +37,24 @@ public final class HuddableApi {
      * How an element is placed. {@code defaultBox} is its unmoved box: position in GUI pixels, size in the
      * element's own units before {@code baseScale}. {@code baseScale} is the element's own scale (1 when it has
      * none). Resizable elements get edge grips and must lay themselves out to {@link Placement#width}/height.
+     * {@code listed} leaves the element out of the editor while false (switched off in its own mod); its layout is kept.
      */
-    public record Spec(BoxProvider defaultBox, DoubleSupplier baseScale, boolean resizable, int minWidth, int minHeight) {
+    public record Spec(BoxProvider defaultBox, DoubleSupplier baseScale, boolean resizable, int minWidth, int minHeight,
+                       BooleanSupplier listed) {
         public static Spec of(BoxProvider defaultBox) {
-            return new Spec(defaultBox, () -> 1.0, false, 1, 1);
+            return new Spec(defaultBox, () -> 1.0, false, 1, 1, () -> true);
         }
 
         public Spec withBaseScale(DoubleSupplier scale) {
-            return new Spec(defaultBox, scale, resizable, minWidth, minHeight);
+            return new Spec(defaultBox, scale, resizable, minWidth, minHeight, listed);
         }
 
         public Spec resizable(int minWidth, int minHeight) {
-            return new Spec(defaultBox, baseScale, true, Math.max(1, minWidth), Math.max(1, minHeight));
+            return new Spec(defaultBox, baseScale, true, Math.max(1, minWidth), Math.max(1, minHeight), listed);
+        }
+
+        public Spec listedWhen(BooleanSupplier listed) {
+            return new Spec(defaultBox, baseScale, resizable, minWidth, minHeight, listed);
         }
     }
 
@@ -59,7 +66,7 @@ public final class HuddableApi {
 
     /** Adds an element to the editor. Registering an ID twice replaces the first. */
     public static void register(Identifier id, Component label, Spec spec) {
-        Parts.add(ExternalPart.api(id, label, spec));
+        Parts.add(ExternalPart.api(id, label, spec).listedWhen(spec.listed()));
     }
 
     /**
