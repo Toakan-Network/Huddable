@@ -30,6 +30,7 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.3.6: chat's size options are put back however the editor closes without Done (a disconnect too), not only
   on Cancel/Esc.
 - 0.3.7: switching profiles waits for queued saves, so switching away and straight back reads the latest file.
+- 0.3.8: a profile can be renamed to a change of case only ("pvp" to "PvP").
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.

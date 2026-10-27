@@ -96,8 +96,10 @@ public final class Profiles {
     /** Renames the active profile; returns false when the name is taken or the file can't be moved. */
     public static boolean renameActive(String newName) {
         String name = cleanName(newName);
-        if (name.equalsIgnoreCase(activeName)) return true;
-        if (file(name).exists()) return false;
+        if (name.equals(activeName)) return true;
+        // A change of case only: on Windows the "other" file is this one, so it isn't taken.
+        boolean caseOnly = name.equalsIgnoreCase(activeName);
+        if (!caseOnly && file(name).exists()) return false;
         JsonFiles.flush();
         File old = file(activeName);
         if (old.exists() && !old.renameTo(file(name))) return false;
