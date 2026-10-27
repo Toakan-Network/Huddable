@@ -33,6 +33,7 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.3.8: a profile can be renamed to a change of case only ("pvp" to "PvP").
 - 0.3.9: the font list is read from the resource packs once per reload, not on every editor widget rebuild
   (each toolbar drag step).
+- 0.3.10: `inputCode` looks each key code up once (same helper as ChatTabs and Shopping List).
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
