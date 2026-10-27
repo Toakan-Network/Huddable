@@ -60,6 +60,15 @@ As in CraftingTracker: `./gradlew build` builds `:mc26.2` and `:mc26.3` from the
 - No `org.lwjgl.glfw`. Read `InputConstants` key and mouse codes with `HuddableClient.inputCode("MOUSE_BUTTON_LEFT")`;
   they differ between 26.2 and 26.3.
 
+## Branches and CI
+- Repo: `Toakan-Network/Huddable` (`origin`). Work happens on `dev`; `main` is what's released. Commit to `dev`
+  and leave merging into `main` to the user.
+- `.github/workflows/build.yml` builds both jars on pushes to `main` and `dev`, on pull requests, nightly and by
+  hand, and uploads `build/libs` as the `Artifacts` artifact.
+- `.github/workflows/publish.yml` runs when a GitHub release is published: the tag must equal `mod_version`
+  (`v` prefix allowed), then it builds and attaches the 26.2 and 26.3 jars to the release. GitHub only for now;
+  Modrinth and CurseForge can be added the way Shopping List's `publish.yml` does it.
+
 ## Testing in game
 Mod Menu isn't in the dev client, so test the editor in the live instance
 (`G:\Games\Minecraft\Instances\Hypixel 26.2\`) or any instance with Mod Menu. Config is `config\huddable\`.

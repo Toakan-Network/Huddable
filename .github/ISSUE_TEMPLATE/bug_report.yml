@@ -1,0 +1,69 @@
+name: Bug report
+description: Something in the mod doesn't work as expected.
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please check the open issues first in case it's already known.
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version
+      description: Shown in the mod list, or in the jar name (e.g. huddable-0.4.0+26.2.jar).
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: mc-version
+    attributes:
+      label: Minecraft version
+      options:
+        - "26.2"
+        - "26.3"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead. Screenshots help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: For example, which element you moved, its style or font, the Size mode, and the GUI Scale.
+      placeholder: |
+        1. Open the HUD Designer from Mod Menu
+        2. Drag the scoreboard to the left edge
+        3. ...
+    validations:
+      required: false
+  - type: textarea
+    id: share-code
+    attributes:
+      label: Layout share code
+      description: If it's about a layout, copy it with the editor's Export button and paste the HUD1 code here.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log
+      description: |
+        If you can, paste the relevant part of `logs/latest.log` (or upload the file). Crash? Paste the crash
+        report instead.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: other-mods
+    attributes:
+      label: Other mods
+      description: Other client mods you run, especially ones with their own HUD (Skyblocker, SkyCubed, Jade, etc.).
+    validations:
+      required: false
