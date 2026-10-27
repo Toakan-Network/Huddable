@@ -52,7 +52,9 @@ public final class MeowddingCompat {
                 if (SKIPPED.contains(overlay.getClass().getName())) continue;
                 Identifier id = uniqueId(overlay);
                 PARTS.put(overlay, id);
-                HuddableApi.register(id, label(overlay), HuddableApi.Spec.of((w, h) -> box(overlay)));
+                // An overlay its mod has switched off isn't listed until it's switched back on there.
+                Parts.add(ExternalPart.api(id, label(overlay), HuddableApi.Spec.of((w, h) -> box(overlay)))
+                    .listedWhen(overlay::getEnabled));
             }
         } catch (RuntimeException | LinkageError e) {
             HuddableClient.LOGGER.warn("Couldn't list meowdding-lib's overlays; they can't be placed", e);

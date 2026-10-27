@@ -38,6 +38,7 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.4.0: meowdding-lib overlays (SkyCubed, SkyOcean) placed one by one: each is an API part, and an optional
   mixin (`mixin.meowdding`, applied only with meowdding-lib loaded) moves its draw call inside meowdding's
   overlay loop. General Settings has an Advanced toggle to turn it off.
+- 0.4.1: overlays switched off in their own mod aren't listed in the editor (they showed as empty boxes).
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
@@ -61,7 +62,8 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 
 - 0.4.0: meowdding overlays on SkyBlock with SkyCubed: listed with stable IDs, boxes matching what they draw
   (RPG overlay, text overlays, alignment END/CENTER), moving, scaling and hiding them, the profile screen scale,
-  the Advanced toggle off and on, and meowdding's own editor still working alongside.
+  the Advanced toggle off and on, and meowdding's own editor still working alongside. 0.4.1: an overlay
+  switched off in SkyCubed leaves the list and comes back, at its saved position, when switched on.
 
 ## Next (ElvUI direction)
 - Shopping List on Huddable: register its five panels through the API (resizable), hand its Move HUD to

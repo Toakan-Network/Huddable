@@ -69,7 +69,8 @@ their mod's name, for example `SkyCubed: Health`, and move, scale and hide like 
 meowdding's own overlay editor highlights. meowdding's own editor (dragging overlays with chat open) still works, but its
 highlight and clicks stay where meowdding places the overlay, so pick one editor per overlay. SkyCubed's Moveable
 Hotbar and Moveable Item Text aren't listed: SkyCubed draws those on the vanilla hotbar, which Huddable already
-places. Turn this off under General Settings, Advanced.
+places. Overlays switched off in their own mod aren't listed; switch them on there and they come back with
+their saved position. Turn this off under General Settings, Advanced.
 
 Other mods that draw their HUD some other way can't be moved until they support Huddable.
 

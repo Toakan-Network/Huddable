@@ -1,5 +1,6 @@
 package uk.toakan.tad.huddable;
 
+import java.util.function.BooleanSupplier;
 import uk.toakan.tad.huddable.api.HuddableApi;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.minecraft.client.DeltaTracker;
@@ -37,6 +38,8 @@ public final class ExternalPart implements HudPart {
     private int measuredWidth = -1;
     private int measuredHeight = -1;
     private long lastMeasure;
+    /** Listed in the editor only while true: false while the element's own mod has it switched off. */
+    private BooleanSupplier listed = () -> true;
 
     private ExternalPart(Identifier id, Component label, HuddableApi.Spec spec) {
         this.id = id;
@@ -50,6 +53,16 @@ public final class ExternalPart implements HudPart {
 
     public static ExternalPart api(Identifier id, Component label, HuddableApi.Spec spec) {
         return new ExternalPart(id, label, spec);
+    }
+
+    /** Leaves the part out of the editor while {@code listed} is false; its saved layouts are kept. */
+    public ExternalPart listedWhen(BooleanSupplier listed) {
+        this.listed = listed;
+        return this;
+    }
+
+    public boolean listed() {
+        return listed.getAsBoolean();
     }
 
     boolean isFabric() {

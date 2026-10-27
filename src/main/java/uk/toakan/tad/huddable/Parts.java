@@ -15,9 +15,12 @@ public final class Parts {
 
     private Parts() {}
 
+    /** The parts the editor shows: other mods' ones only while {@link ExternalPart#listed}. */
     public static List<HudPart> all() {
         List<HudPart> parts = new ArrayList<>(List.of(Element.values()));
-        parts.addAll(EXTERNAL);
+        for (ExternalPart part : EXTERNAL) {
+            if (part.listed()) parts.add(part);
+        }
         return parts;
     }
 
