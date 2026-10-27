@@ -35,6 +35,8 @@ public final class HudFonts {
     private static final Map<String, FontDescription> DESCRIPTIONS = new HashMap<>();
     /** Font ids the loaded packs provide, or null until next asked; cleared on resource reload. */
     private static Set<String> loaded;
+    /** {@link #availableFonts()}, or null until next asked; cleared on resource reload. */
+    private static List<String> fontList;
     private static Font active;
     private static int generation;
 
@@ -57,8 +59,20 @@ public final class HudFonts {
         return parsed != null ? parsed.toString() : null;
     }
 
-    /** Every font the loaded resource packs provide ({@code assets/<ns>/font/<name>.json}), vanilla's first. */
+    /**
+     * Every font the loaded resource packs provide ({@code assets/<ns>/font/<name>.json}), vanilla's first. Listed
+     * once per resource reload (the editor rebuilds its widgets on every drag), as an unmodifiable list.
+     */
     public static List<String> availableFonts() {
+        List<String> fonts = fontList;
+        if (fonts == null) {
+            fonts = List.copyOf(listFonts());
+            fontList = fonts;
+        }
+        return fonts;
+    }
+
+    private static List<String> listFonts() {
         List<String> fonts = new ArrayList<>();
         FileToIdConverter converter = FileToIdConverter.json("font");
         for (Identifier file : converter.listMatchingResources(Minecraft.getInstance().getResourceManager()).keySet()) {
@@ -135,6 +149,7 @@ public final class HudFonts {
     /** Fonts changed (resource reload, F3+T): which ids exist and every glyph width may be different. */
     public static void reloaded() {
         loaded = null;
+        fontList = null;
         generation++;
     }
 

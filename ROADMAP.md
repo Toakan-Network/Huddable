@@ -31,6 +31,8 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   on Cancel/Esc.
 - 0.3.7: switching profiles waits for queued saves, so switching away and straight back reads the latest file.
 - 0.3.8: a profile can be renamed to a change of case only ("pvp" to "PvP").
+- 0.3.9: the font list is read from the resource packs once per reload, not on every editor widget rebuild
+  (each toolbar drag step).
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
