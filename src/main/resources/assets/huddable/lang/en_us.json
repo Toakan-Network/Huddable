@@ -70,6 +70,7 @@
   "huddable.editor.hint.live": "Drag to move (Shift: no snap), corner to scale, edge to resize, right-click for options, Elements to show/hide",
   "huddable.editor.hint.preview": "Join a world for a live preview. Drag to move, corner to scale, edge to resize, right-click for options",
   "huddable.editor.element.hidden": "%s (hidden)",
+  "huddable.editor.element.not_showing": "%s (not showing)",
 
   "huddable.editor.list.title": "HUD elements",
   "huddable.editor.list.hidden": "%s\nHidden: click to show",

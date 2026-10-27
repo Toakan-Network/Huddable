@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
@@ -63,7 +64,7 @@ public final class ExternalPart implements HudPart {
     @Override
     public String label() {
         String name = label.getString();
-        return isFabric() && measured == null ? name + " (not showing)" : name;
+        return isFabric() && measured == null ? I18n.get("huddable.editor.element.not_showing", name) : name;
     }
 
     @Override

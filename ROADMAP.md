@@ -26,6 +26,7 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.3.3: queued saves are flushed when the game closes (Done then quitting at once kept nothing).
 - 0.3.4: Font quality defaults to Pack's own (vanilla's 1x oversample); the old 4x default raised every mod's TTF
   fonts to 16x the glyph memory. A saved 4 from before is moved to Pack's own once (`settingsVersion`).
+- 0.3.5: the "(not showing)" label of an undrawn mod layer comes from the lang file.
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
