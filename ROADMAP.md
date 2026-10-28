@@ -46,6 +46,7 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.6.0: container screen art. The background picture of each vanilla container screen comes from a chosen enabled
   pack, for all screens or per screen (`ContainerArtMixin` swaps the texture id in `GuiGraphicsExtractor.innerBlit`;
   art loaded through `PackFrames.packTexture`).
+- 0.6.1: closed chat can be framed, around the messages it shows (measured like other framed elements).
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.

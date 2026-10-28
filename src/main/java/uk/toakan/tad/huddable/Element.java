@@ -96,10 +96,10 @@ public enum Element implements HudPart {
         return restyleable;
     }
 
-    /** Chat and toasts have their own backgrounds and aren't drawn through {@link HudWrapper}; a frame on a crosshair is no use. */
+    /** Toasts aren't drawn through {@link HudWrapper}; a frame on a crosshair is no use. Chat is framed while closed. */
     @Override
     public boolean frameable() {
-        return this != CHAT && this != TOASTS && this != CROSSHAIR;
+        return this != TOASTS && this != CROSSHAIR;
     }
 
     /** Chat sizes itself to vanilla's chat width and height options; a Bar-style status bar to its bar size. */

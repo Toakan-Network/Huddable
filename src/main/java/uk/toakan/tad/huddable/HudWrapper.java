@@ -44,6 +44,11 @@ public final class HudWrapper {
         Font font = element == Element.CHAT ? null : HudFonts.wrapped(element, Profiles.current());
         HudFrames.Choice frame = HudFrames.resolve(element, Profiles.current());
         if (element == Element.CHAT || layout.isDefault() && scale == 1f && font == null && frame == null) {
+            if (element == Element.CHAT && frame != null) {
+                // Measured with ChatComponentMixin's move already applied, so the box is where chat draws now.
+                HuddableApi.Box drawn = drawnBox(element, original, delta, null);
+                if (drawn != null) HudFrames.drawAround(graphics, frame, drawn.x(), drawn.y(), drawn.width(), drawn.height());
+            }
             original.extractRenderState(graphics, delta);
             return;
         }

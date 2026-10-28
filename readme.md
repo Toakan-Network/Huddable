@@ -107,8 +107,9 @@ None has no frame even when the profile has one.
 
 Frames follow what each element draws: a boss bar, title or other mod's layer that isn't showing has no frame, and
 one that grows (the scoreboard, a mod's list) has its frame grow with it, checked four times a second for framed
-elements only. Frame art is drawn at screen size, so frames match across elements of any scale. Chat, toasts and
-the crosshair have no frame; full-screen mod layers get none either. If a frame's pack is turned off, the top
+elements only. Frame art is drawn at screen size, so frames match across elements of any scale. Closed chat is
+framed around the messages showing, so its frame goes when they fade; the open chat (T) has none. Toasts and the
+crosshair have no frame; full-screen mod layers get none either. If a frame's pack is turned off, the top
 pack's art is drawn until it's back, and share codes keep the choice for players who have the pack.
 
 Shopping List's panels use a Huddable frame in place of their own when one is set for them (it keeps its own look
