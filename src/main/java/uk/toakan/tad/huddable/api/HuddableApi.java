@@ -1,6 +1,7 @@
 package uk.toakan.tad.huddable.api;
 
 import uk.toakan.tad.huddable.ExternalPart;
+import uk.toakan.tad.huddable.HudFrames;
 import uk.toakan.tad.huddable.LayoutEditorScreen;
 import uk.toakan.tad.huddable.Parts;
 import uk.toakan.tad.huddable.Profiles;
@@ -100,6 +101,35 @@ public final class HuddableApi {
         pose.translate(p.x(), p.y());
         pose.scale(p.scale(), p.scale());
         pose.translate(-box.x(), -box.y());
+        HudFrames.Choice frame = HudFrames.resolve(part, Profiles.current());
+        if (frame != null) HudFrames.drawAround(graphics, frame, box.x(), box.y(), p.width(), p.height());
+        return true;
+    }
+
+    /**
+     * Space, in the element's own units at this frame's scale, to keep its content off the frame the player gave it
+     * in Huddable; -1 when it has none. For elements drawn from {@link #placement}: lay out inside it, then call
+     * {@link #drawFrame}. ({@link #push} draws the frame itself.)
+     */
+    public static int frameInset(Identifier id) {
+        ExternalPart part = Parts.external(id);
+        HudFrames.Choice frame = part == null ? null : HudFrames.resolve(part, Profiles.current());
+        if (frame == null) return -1;
+        Minecraft mc = Minecraft.getInstance();
+        float scale = part.placement(mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight()).scale();
+        // Frame art is drawn at screen size, so a smaller element needs more of its own units to clear it.
+        return (int) Math.ceil(frame.kind().inset / Math.max(0.05f, scale));
+    }
+
+    /**
+     * Draws the element's frame over the box, given in the current pose (usually the element's own 0, 0, width,
+     * height after moving to its placement). Draw it first, so the element draws over it. False when it has none.
+     */
+    public static boolean drawFrame(GuiGraphicsExtractor graphics, Identifier id, int x, int y, int width, int height) {
+        ExternalPart part = Parts.external(id);
+        HudFrames.Choice frame = part == null ? null : HudFrames.resolve(part, Profiles.current());
+        if (frame == null) return false;
+        HudFrames.drawOver(graphics, frame, x, y, width, height);
         return true;
     }
 

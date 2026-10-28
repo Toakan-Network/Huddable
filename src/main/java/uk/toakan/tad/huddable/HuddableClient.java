@@ -59,5 +59,8 @@ public final class HuddableClient implements ClientModInitializer {
         ResourceLoader resources = ResourceLoader.get(PackType.CLIENT_RESOURCES);
         resources.registerReloadListener(fontsReloaded, (ResourceManagerReloadListener) manager -> HudFonts.reloaded());
         resources.addListenerOrdering(ResourceReloaderKeys.Client.FONTS, fontsReloaded);
+        // Which packs have frame art, and the art read from them, may change too.
+        resources.registerReloadListener(Identifier.fromNamespaceAndPath(MOD_ID, "hud_frames"),
+            (ResourceManagerReloadListener) manager -> HudFrames.reloaded());
     }
 }

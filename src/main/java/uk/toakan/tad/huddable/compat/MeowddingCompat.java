@@ -15,8 +15,10 @@ import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
 import uk.toakan.tad.huddable.ExternalPart;
 import uk.toakan.tad.huddable.GeneralSettings;
+import uk.toakan.tad.huddable.HudFrames;
 import uk.toakan.tad.huddable.HuddableClient;
 import uk.toakan.tad.huddable.Parts;
+import uk.toakan.tad.huddable.Profiles;
 import uk.toakan.tad.huddable.api.HuddableApi;
 import uk.toakan.tad.huddable.mixin.meowdding.OverlaysAccessor;
 
@@ -87,6 +89,15 @@ public final class MeowddingCompat {
         HuddableApi.Placement p = part.placement(w, h);
         if (p.hidden()) return;
         HuddableApi.Box box = part.defaultBox(w, h);
+        HudFrames.Choice frame = HudFrames.resolve(part, Profiles.current());
+        if (frame != null) {
+            // In screen space: the pose holds meowdding's own position, which the box already includes.
+            Matrix3x2fStack framePose = graphics.pose();
+            framePose.pushMatrix();
+            framePose.identity();
+            HudFrames.drawAround(graphics, frame, p.x(), p.y(), p.width() * p.scale(), p.height() * p.scale());
+            framePose.popMatrix();
+        }
         if (p.x() == box.x() && p.y() == box.y() && p.scale() == 1f) {
             draw.run();
             return;

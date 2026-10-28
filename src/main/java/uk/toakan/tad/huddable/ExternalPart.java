@@ -26,6 +26,8 @@ import net.minecraft.util.Util;
 public final class ExternalPart implements HudPart {
     /** How often an element that drew nothing is measured again, while it matters. */
     private static final long RETRY_MILLIS = 1000;
+    /** How often a framed layer is measured, so its frame follows what it draws. */
+    static final long FRAME_MILLIS = 250;
 
     public final Identifier id;
     private final Component label;
@@ -38,6 +40,8 @@ public final class ExternalPart implements HudPart {
     private int measuredWidth = -1;
     private int measuredHeight = -1;
     private long lastMeasure;
+    /** Fabric layers only: whether the last measure found anything drawn (the frame is left off while not). */
+    private boolean drawing;
     /** Listed in the editor only while true: false while the element's own mod has it switched off. */
     private BooleanSupplier listed = () -> true;
 
@@ -153,30 +157,39 @@ public final class ExternalPart implements HudPart {
 
     /**
      * Fabric layers: measures the box when the screen size changed, when nothing was found yet and it matters
-     * ({@code wanted}), and once a second while the editor is open (the element may have grown or moved).
+     * ({@code wanted}), once a second while the editor is open (the element may have grown or moved), and four
+     * times a second while it has a frame ({@code framed}), so the frame follows it.
      */
-    void measureIfNeeded(GuiGraphicsExtractor graphics, DeltaTracker delta, boolean wanted) {
+    void measureIfNeeded(GuiGraphicsExtractor graphics, DeltaTracker delta, boolean wanted, boolean framed) {
         int w = graphics.guiWidth();
         int h = graphics.guiHeight();
         long now = Util.getMillis();
         boolean resized = measured != null && (w != measuredWidth || h != measuredHeight);
-        boolean retry = (measured == null && wanted || Profiles.editing()) && now - lastMeasure >= RETRY_MILLIS;
+        long since = now - lastMeasure;
+        boolean retry = (measured == null && wanted || Profiles.editing()) && since >= RETRY_MILLIS
+            || framed && since >= FRAME_MILLIS;
         if (!resized && !retry) return;
         lastMeasure = now;
         measuredWidth = w;
         measuredHeight = h;
-        HuddableApi.Box box = measure(delta);
+        HuddableApi.Box box = measure(original, delta, id);
+        drawing = box != null;
         if (box != null || resized) measured = box;
     }
 
-    /** Draws the layer, unmoved, into a scratch render state and returns the bounds of what it drew. */
-    private HuddableApi.Box measure(DeltaTracker delta) {
+    /** Fabric layers: the unmoved box it drew at the last measure, or null when it drew nothing then. */
+    HuddableApi.Box drawnBox() {
+        return drawing ? measured : null;
+    }
+
+    /** Draws {@code layer}, unmoved, into a scratch render state and returns the bounds of what it drew. */
+    static HuddableApi.Box measure(HudElement layer, DeltaTracker delta, Object name) {
         Minecraft mc = Minecraft.getInstance();
         GuiRenderState state = new GuiRenderState();
         try {
-            original.extractRenderState(new GuiGraphicsExtractor(mc, state, -1, -1), delta);
+            layer.extractRenderState(new GuiGraphicsExtractor(mc, state, -1, -1), delta);
         } catch (RuntimeException e) {
-            HuddableClient.LOGGER.warn("Couldn't measure HUD element {}", id, e);
+            HuddableClient.LOGGER.warn("Couldn't measure HUD element {}", name, e);
             return null;
         }
         int[] b = {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};

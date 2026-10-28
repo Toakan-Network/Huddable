@@ -28,6 +28,8 @@ public final class Layout {
     public float offsetFactor;
     /** The profile's font for every element that has no font of its own; null = vanilla's ({@link HudFonts}). */
     public String font;
+    /** The profile's frame for every element that has no frame choice of its own; null = none ({@link HudFrames}). */
+    public String frame;
 
     /** The element's layout, or a shared vanilla one when it has none; don't change what this returns. */
     public ElementLayout get(HudPart part) {
@@ -67,6 +69,7 @@ public final class Layout {
         c.sizing = sizing;
         c.offsetFactor = offsetFactor;
         c.font = font;
+        c.frame = frame;
         return c;
     }
 
@@ -101,6 +104,8 @@ public final class Layout {
         if (!(offsetFactor >= 0.05f && offsetFactor <= 20f)) offsetFactor = 0;
         font = HudFonts.cleanId(font);
         if (HudFonts.DEFAULT_FONT.equals(font)) font = null;
+        frame = HudFrames.cleanId(frame);
+        if (HudFrames.NONE.equals(frame)) frame = null;
         Map<String, ElementLayout> kept = new LinkedHashMap<>();
         for (Element element : Element.values()) {
             ElementLayout l = elements.get(element.name());

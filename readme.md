@@ -33,6 +33,8 @@ whatever you're placing; it stays where you left it until the game closes.
   Scale changes. Switching mode in the editor keeps elements where they are and only changes their size.
 - **Font:** the profile's font, picked from every font your resource packs provide (each shown in itself).
   Every element that draws text uses it unless you give that element its own (see Fonts below).
+- **Frame:** the profile's frame, drawn around every element unless you give that element its own or None (see
+  Frames below).
 - **Move:** drag an element. It snaps to the screen edges and centre and to other elements' edges and centres
   (cyan guide lines); hold Shift to place it freely.
 - **Scale:** drag one of an element's gold corner handles (25% to 400%). The element keeps its shape.
@@ -47,6 +49,7 @@ whatever you're placing; it stays where you left it until the game closes.
   - Colour (for the non-vanilla styles).
   - Bar width, height and text (Bar style).
   - Font, for elements that draw text: Profile (the profile's font), Vanilla, or any pack font.
+  - Frame: Profile (the profile's frame), None, or any frame from the list.
   - Reset element.
 - **Done** saves, **Cancel** or Esc drops your changes.
 
@@ -91,6 +94,23 @@ and share codes keep the font for players who have the pack.
 
 Chat in a new font re-wraps its lines to fit. Toasts drawn by another mod (Fancy Notify, for example) keep that
 mod's font; vanilla's toasts change.
+
+### Frames
+A frame is Minecraft's own tooltip, popup or button art drawn around an element, so a resource pack that decorates
+those (corner pieces, patterned edges) decorates your HUD too. The list has each kind from the top pack (what the
+rest of the game shows), then from every enabled pack that has its own art, for example "Tooltip (Faithful 64x)".
+To use one pack's frame without its other textures, enable it and move it to the bottom of the pack list. Pick a
+frame for the whole profile with the toolbar's **Frame** button, or per element in its options; an element set to
+None has no frame even when the profile has one.
+
+Frames follow what each element draws: a boss bar, title or other mod's layer that isn't showing has no frame, and
+one that grows (the scoreboard, a mod's list) has its frame grow with it, checked four times a second for framed
+elements only. Frame art is drawn at screen size, so frames match across elements of any scale. Chat, toasts and
+the crosshair have no frame; full-screen mod layers get none either. If a frame's pack is turned off, the top
+pack's art is drawn until it's back, and share codes keep the choice for players who have the pack.
+
+Shopping List's panels use a Huddable frame in place of their own when one is set for them (it keeps its own look
+otherwise). Other mods can do the same through the API (`frameInset`, `drawFrame`).
 
 ### Styles
 - **Bar:** a filled bar with the value written on it. Health shows absorption and hunger shows saturation as a
