@@ -106,6 +106,39 @@ class LayoutCodeTest {
     }
 
     @Test
+    void offsetsFollowTheSizingFactor() {
+        Layout layout = new Layout();
+        layout.edit(Element.HOTBAR).dx = -40;
+        layout.edit(Element.HOTBAR).dy = 15;
+        // Not recorded yet (files from before): offsets draw as saved.
+        assertEquals(1f, layout.offsetScale(1.5f));
+
+        layout.offsetFactor = 1f;
+        assertEquals(1.5f, layout.offsetScale(1.5f));
+        layout.rebaseOffsets(1.5f);
+        assertEquals(-60, layout.get(Element.HOTBAR).dx);
+        assertEquals(23, layout.get(Element.HOTBAR).dy); // 22.5 rounds up
+        assertEquals(1.5f, layout.offsetFactor);
+        assertEquals(1f, layout.offsetScale(1.5f));
+
+        layout.rebaseOffsets(1.5f); // again at the same factor: no change
+        assertEquals(-60, layout.get(Element.HOTBAR).dx);
+    }
+
+    @Test
+    void offsetFactorTravelsInCodes() {
+        Layout layout = new Layout();
+        layout.edit(Element.HOTBAR).dy = -30;
+        layout.offsetFactor = 1.25f;
+        assertEquals(1.25f, Layout.fromCode(layout.toCode()).offsetFactor);
+
+        layout.offsetFactor = Float.NaN;
+        assertEquals(0f, Layout.fromCode(layout.toCode()).offsetFactor);
+        layout.offsetFactor = 500f;
+        assertEquals(0f, Layout.fromCode(layout.toCode()).offsetFactor);
+    }
+
+    @Test
     void rejectsOtherCodes() {
         assertNull(Layout.fromCode("SSL1:abc"));
         assertNull(Layout.fromCode("HUD1:not base64!"));

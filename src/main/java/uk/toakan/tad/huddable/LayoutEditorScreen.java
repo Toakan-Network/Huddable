@@ -40,7 +40,7 @@ public class LayoutEditorScreen extends Screen {
     private static final int TOOLBAR_WIDTH = 72;
     /** Title strip at the top of the controls; drag it to move them. */
     private static final int GRIP = 12;
-    private static final int TOOLBAR_BUTTONS = 12;
+    private static final int TOOLBAR_BUTTONS = 14;
     private static final int TOOLBAR_HEIGHT = GRIP + TOOLBAR_BUTTONS * 22 + 2;
     private static final int HANDLE = 6;
     private static final int PANEL_WIDTH = 130;
@@ -79,6 +79,13 @@ public class LayoutEditorScreen extends Screen {
     private boolean pickingFont;
     private HudPart fontTarget;
     private int fontPage;
+    /** The frame list: for {@link #frameTarget}, or the profile frame when that is null. */
+    private boolean pickingFrame;
+    private HudPart frameTarget;
+    private int framePage;
+    /** The container screens list: which pack each screen's picture comes from. */
+    private boolean pickingScreens;
+    private int screensPage;
     /** Where the controls were left, kept while the game runs; -1 = default (left edge, halfway down). */
     private static int toolbarX = -1;
     private static int toolbarY = -1;
@@ -107,12 +114,16 @@ public class LayoutEditorScreen extends Screen {
         Profiles.setPreview(working);
         selected = null;
         pickingFont = false;
+        pickingFrame = false;
+        pickingScreens = false;
     }
 
     // ---- Widgets ----
 
     @Override
     protected void init() {
+        // Offsets in plain GUI pixels while editing (opened, profile changed, window resized), so dragging is exact.
+        working.rebaseOffsets(working.sizing.factor());
         // A rebuild (resize, toolbar moved) keeps a half-typed name.
         String draft = renaming && nameBox != null ? nameBox.getValue() : Profiles.activeName();
         if (toolbarX < 0) {
@@ -138,6 +149,8 @@ public class LayoutEditorScreen extends Screen {
         y = toolbarButton(x, y, I18n.get("huddable.editor.elements"), I18n.get("huddable.editor.elements.tooltip"), () -> {
             showList = !showList;
             pickingFont = false;
+            pickingFrame = false;
+            pickingScreens = false;
             selected = null;
             rebuildWidgets();
         });
@@ -148,11 +161,36 @@ public class LayoutEditorScreen extends Screen {
             selected = null;
             openFontList(null);
             pickingFont = !open;
+            pickingFrame = false;
+            pickingScreens = false;
+            rebuildWidgets();
+        });
+        y = toolbarButton(x, y, I18n.get("huddable.editor.frame"),
+            I18n.get("huddable.editor.frame.tooltip", frameName(working.frame, false)), () -> {
+            boolean open = pickingFrame && frameTarget == null;
+            showList = false;
+            selected = null;
+            pickingFont = false;
+            openFrameList(null);
+            pickingFrame = !open;
+            pickingScreens = false;
+            rebuildWidgets();
+        });
+        y = toolbarButton(x, y, I18n.get("huddable.editor.screens"), I18n.get("huddable.editor.screens.tooltip"), () -> {
+            boolean open = pickingScreens;
+            showList = false;
+            selected = null;
+            pickingFont = false;
+            pickingFrame = false;
+            pickingScreens = !open;
+            screensPage = 0;
             rebuildWidgets();
         });
         y = toolbarButton(x, y, I18n.get("huddable.editor.size", working.sizing.label()),
             I18n.get("huddable.editor.size.tooltip"), () -> {
             working.sizing = working.sizing.next();
+            // Elements stay where they are; only their size changes.
+            working.offsetFactor = working.sizing.factor();
             rebuildWidgets();
         });
         y = toolbarButton(x, y, I18n.get("huddable.editor.new"), I18n.get("huddable.editor.new.tooltip"), this::newProfile);
@@ -167,6 +205,8 @@ public class LayoutEditorScreen extends Screen {
         toolbarButton(x, y, I18n.get("huddable.editor.done"), I18n.get("huddable.editor.done.tooltip"), this::done);
         if (showList) buildList();
         else if (pickingFont) buildFontList();
+        else if (pickingFrame) buildFrameList();
+        else if (pickingScreens) buildScreensList();
         else if (selected != null) buildPanel();
     }
 
@@ -250,6 +290,10 @@ public class LayoutEditorScreen extends Screen {
         }
         if (HudFonts.fontable(selected, l)) {
             y = panelButton(x, y, w, I18n.get("huddable.editor.panel.font", fontName(l.font, true)), () -> openFontList(selected));
+        }
+        if (selected.frameable()) {
+            y = panelButton(x, y, w, I18n.get("huddable.editor.panel.frame", frameName(l.frame, true)),
+                () -> openFrameList(selected));
         }
         y = panelButton(x, y, w, I18n.get("huddable.editor.panel.reset"), () -> working.reset(selected));
         y = panelButton(x, y, w, I18n.get("huddable.editor.close"), () -> selected = null);
@@ -340,6 +384,150 @@ public class LayoutEditorScreen extends Screen {
         if (fontTarget.movable()) keepOnScreen(fontTarget);
     }
 
+    private void openFrameList(HudPart target) {
+        pickingFrame = true;
+        frameTarget = target;
+        framePage = 0;
+    }
+
+    /** A frame choice's name: {@code null} is the profile frame for an element, no frame for the profile. */
+    private static String frameName(String id, boolean element) {
+        if (id == null) return I18n.get(element ? "huddable.editor.frame.profile" : "huddable.editor.frame.none");
+        if (id.equals(HudFrames.NONE)) return I18n.get("huddable.editor.frame.none");
+        return HudFrames.name(id);
+    }
+
+    /**
+     * Every frame the resource packs offer (each kind from the top pack, then from each pack that has it), a page at
+     * a time; the current choice is gold. For an element the first choices are the profile frame and none.
+     */
+    private void buildFrameList() {
+        placePanel(FONT_PANEL_WIDTH);
+        int x = panelX + 4;
+        int w = FONT_PANEL_WIDTH - 8;
+        List<String> choices = new ArrayList<>();
+        if (frameTarget != null) choices.add(null);
+        choices.add(HudFrames.NONE);
+        choices.addAll(HudFrames.available());
+        String current = frameTarget != null ? working.get(frameTarget).frame
+            : working.frame != null ? working.frame : HudFrames.NONE;
+        if (current != null && !choices.contains(current)) choices.add(current); // set, but its pack is off now
+        int perPage = Math.max(1, (height - panelY - 16 - 2 * ROW - 2) / ROW);
+        int pages = (choices.size() + perPage - 1) / perPage;
+        framePage = Math.clamp(framePage, 0, pages - 1);
+        int y = panelY + 16;
+        for (int i = framePage * perPage; i < Math.min(choices.size(), (framePage + 1) * perPage); i++) {
+            String id = choices.get(i);
+            boolean chosen = id == null ? current == null : id.equals(current);
+            String name = font.plainSubstrByWidth(frameName(id, frameTarget != null), w - 16);
+            MutableComponent label = Component.literal(chosen ? "> " + name : name);
+            addRenderableWidget(Button.builder(chosen ? label.withStyle(ChatFormatting.GOLD) : label, b -> {
+                setFrame(id);
+                rebuildWidgets();
+            }).tooltip(Tooltip.create(Component.literal(frameTip(id)))).bounds(x, y, w, 20).build());
+            y += ROW;
+        }
+        if (pages > 1) {
+            addRenderableWidget(Button.builder(Component.literal("<"), b -> {
+                framePage--;
+                rebuildWidgets();
+            }).bounds(x, y, 20, 20).build()).active = framePage > 0;
+            addRenderableWidget(Button.builder(Component.literal(">"), b -> {
+                framePage++;
+                rebuildWidgets();
+            }).bounds(x + w - 20, y, 20, 20).build()).active = framePage < pages - 1;
+            y += ROW;
+        }
+        y = panelButton(x, y, w, I18n.get(frameTarget != null ? "huddable.editor.back" : "huddable.editor.close"),
+            () -> pickingFrame = false);
+        panelHeight = y - panelY + 2;
+    }
+
+    private String frameTip(String id) {
+        if (id == null) return I18n.get("huddable.editor.frame.profile.tooltip");
+        if (id.equals(HudFrames.NONE)) {
+            return I18n.get(frameTarget != null ? "huddable.editor.frame.none.element_tooltip" : "huddable.editor.frame.none.tooltip");
+        }
+        return HudFrames.packOff(id) ? I18n.get("huddable.editor.frame.pack_off", HudFrames.name(id)) : HudFrames.name(id);
+    }
+
+    private void setFrame(String id) {
+        if (frameTarget == null) {
+            working.frame = HudFrames.NONE.equals(id) ? null : id;
+            return;
+        }
+        working.edit(frameTarget).frame = id;
+    }
+
+    /**
+     * Container screens, a page at a time: first every screen's pack, then each screen that more than one enabled
+     * pack has a picture for (or that has a choice of its own). Clicking a row moves to the next pack.
+     */
+    private void buildScreensList() {
+        placePanel(FONT_PANEL_WIDTH);
+        int x = panelX + 4;
+        int w = FONT_PANEL_WIDTH - 8;
+        List<String> rows = new ArrayList<>();
+        rows.add(null);
+        for (String screen : HudScreenArt.SCREENS) {
+            if (HudScreenArt.packsWith(screen).size() > 1 || working.screenArtFor.containsKey(screen)) rows.add(screen);
+        }
+        int perPage = Math.max(1, (height - panelY - 16 - 2 * ROW - 2) / ROW);
+        int pages = (rows.size() + perPage - 1) / perPage;
+        screensPage = Math.clamp(screensPage, 0, pages - 1);
+        int y = panelY + 16;
+        for (int i = screensPage * perPage; i < Math.min(rows.size(), (screensPage + 1) * perPage); i++) {
+            String screen = rows.get(i);
+            String pack = screen == null ? working.screenArt : working.screenArtFor.get(screen);
+            String packName = screen != null && pack == null ? I18n.get("huddable.editor.screens.profile")
+                : HudScreenArt.packName(pack);
+            String label = I18n.get("huddable.editor.screens.row",
+                screen == null ? I18n.get("huddable.editor.screens.all") : HudScreenArt.name(screen), packName);
+            String tip = pack != null && !HudScreenArt.TOP.equals(pack) && !PackFrames.enabled(pack)
+                ? I18n.get("huddable.editor.screens.pack_off", PackFrames.title(pack))
+                : I18n.get(screen == null ? "huddable.editor.screens.all.tooltip" : "huddable.editor.screens.screen.tooltip");
+            addRenderableWidget(Button.builder(Component.literal(font.plainSubstrByWidth(label, w - 8)), b -> {
+                nextScreenPack(screen);
+                rebuildWidgets();
+            }).tooltip(Tooltip.create(Component.literal(tip))).bounds(x, y, w, 20).build());
+            y += ROW;
+        }
+        if (pages > 1) {
+            addRenderableWidget(Button.builder(Component.literal("<"), b -> {
+                screensPage--;
+                rebuildWidgets();
+            }).bounds(x, y, 20, 20).build()).active = screensPage > 0;
+            addRenderableWidget(Button.builder(Component.literal(">"), b -> {
+                screensPage++;
+                rebuildWidgets();
+            }).bounds(x + w - 20, y, 20, 20).build()).active = screensPage < pages - 1;
+            y += ROW;
+        }
+        y = panelButton(x, y, w, I18n.get("huddable.editor.close"), () -> pickingScreens = false);
+        panelHeight = y - panelY + 2;
+    }
+
+    /**
+     * Moves {@code screen} (null = every screen) to the next pack: the top pack, then each enabled pack that has its
+     * picture; a single screen starts with the profile's choice.
+     */
+    private void nextScreenPack(String screen) {
+        List<String> choices = new ArrayList<>();
+        if (screen == null) {
+            choices.add(null);
+            choices.addAll(HudScreenArt.packsWithAny());
+        } else {
+            choices.add(null);
+            choices.add(HudScreenArt.TOP);
+            choices.addAll(HudScreenArt.packsWith(screen));
+        }
+        String current = screen == null ? working.screenArt : working.screenArtFor.get(screen);
+        String next = choices.get((choices.indexOf(current) + 1) % choices.size());
+        if (screen == null) working.screenArt = next;
+        else if (next == null) working.screenArtFor.remove(screen);
+        else working.screenArtFor.put(screen, next);
+    }
+
     /** A full-width panel button; the panel is rebuilt after it runs, so labels show the new value. */
     private int panelButton(int x, int y, int w, String label, Runnable action) {
         addRenderableWidget(Button.builder(Component.literal(label), b -> {
@@ -428,9 +616,15 @@ public class LayoutEditorScreen extends Screen {
     private void resetAll() {
         working.elements.clear();
         working.sizing = Sizing.GUI_SCALE;
+        working.offsetFactor = working.sizing.factor();
         working.font = null;
+        working.frame = null;
+        working.screenArt = null;
+        working.screenArtFor.clear();
         selected = null;
         pickingFont = false;
+        pickingFrame = false;
+        pickingScreens = false;
         rebuildWidgets();
     }
 
@@ -514,6 +708,16 @@ public class LayoutEditorScreen extends Screen {
             String title = fontTarget != null ? I18n.get("huddable.editor.panel.font", fontTarget.label())
                 : I18n.get("huddable.editor.font.profile_title");
             context.text(font, font.plainSubstrByWidth(title, panelWidth - 8), panelX + 4, panelY + 4, GOLD, false);
+        } else if (pickingFrame) {
+            context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
+            context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
+            String title = frameTarget != null ? I18n.get("huddable.editor.panel.frame", frameTarget.label())
+                : I18n.get("huddable.editor.frame.profile_title");
+            context.text(font, font.plainSubstrByWidth(title, panelWidth - 8), panelX + 4, panelY + 4, GOLD, false);
+        } else if (pickingScreens) {
+            context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
+            context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
+            context.text(font, Component.translatable("huddable.editor.screens.title"), panelX + 4, panelY + 4, GOLD, false);
         } else if (selected != null) {
             ElementLayout l = working.get(selected);
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
@@ -594,7 +798,7 @@ public class LayoutEditorScreen extends Screen {
     }
 
     private boolean inPanel(int mouseX, int mouseY) {
-        return (showList || pickingFont || selected != null) && mouseX >= panelX && mouseX < panelX + panelWidth
+        return (showList || pickingFont || pickingFrame || pickingScreens || selected != null) && mouseX >= panelX && mouseX < panelX + panelWidth
             && mouseY >= panelY && mouseY < panelY + panelHeight;
     }
 
@@ -616,6 +820,8 @@ public class LayoutEditorScreen extends Screen {
         if (ctx.button() == mouseRight) {
             if (element != null) showList = false;
             pickingFont = false;
+            pickingFrame = false;
+            pickingScreens = false;
             selected = element;
             rebuildWidgets();
             return true;
@@ -624,6 +830,8 @@ public class LayoutEditorScreen extends Screen {
         if (selected != null && selected != element) {
             selected = element;
             pickingFont = false;
+            pickingFrame = false;
+            pickingScreens = false;
             rebuildWidgets();
         }
         if (!element.movable()) return true;

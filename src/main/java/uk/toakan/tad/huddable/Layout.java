@@ -8,7 +8,8 @@ import java.util.Map;
 
 /**
  * A whole HUD layout: one {@link ElementLayout} per changed element, keyed by {@link HudPart#key()} (the enum name
- * for vanilla elements, {@code mod:path} for other mods'), plus the screen scale and the profile font. Elements
+ * for vanilla elements, {@code mod:path} for other mods'), plus the screen scale, the profile font and frame, and
+ * which pack container screens are drawn from. Elements
  * left out draw as vanilla. Gson POJO, saved as one profile file and packed into share codes.
  */
 public final class Layout {
@@ -21,8 +22,19 @@ public final class Layout {
 
     public Map<String, ElementLayout> elements = new LinkedHashMap<>();
     public Sizing sizing = Sizing.GUI_SCALE;
+    /**
+     * The {@link Sizing#factor()} the offsets were placed at, so they grow and shrink with the elements when the
+     * window or GUI Scale changes; 0 = not recorded yet (files and codes from before), taken on the first frame.
+     */
+    public float offsetFactor;
     /** The profile's font for every element that has no font of its own; null = vanilla's ({@link HudFonts}). */
     public String font;
+    /** The profile's frame for every element that has no frame choice of its own; null = none ({@link HudFrames}). */
+    public String frame;
+    /** The pack every container screen's picture comes from; null = the top pack's ({@link HudScreenArt}). */
+    public String screenArt;
+    /** Per container screen ({@link HudScreenArt#SCREENS}), its own pack or {@link HudScreenArt#TOP}. */
+    public Map<String, String> screenArtFor = new LinkedHashMap<>();
 
     /** The element's layout, or a shared vanilla one when it has none; don't change what this returns. */
     public ElementLayout get(HudPart part) {
@@ -60,8 +72,32 @@ public final class Layout {
         Layout c = new Layout();
         elements.forEach((k, v) -> c.elements.put(k, v.copy()));
         c.sizing = sizing;
+        c.offsetFactor = offsetFactor;
         c.font = font;
+        c.frame = frame;
+        c.screenArt = screenArt;
+        c.screenArtFor.putAll(screenArtFor);
         return c;
+    }
+
+    /** What the saved offsets are multiplied by at sizing factor {@code current}. */
+    public float offsetScale(float current) {
+        return offsetFactor > 0 ? current / offsetFactor : 1f;
+    }
+
+    /**
+     * Rewrites the offsets as placed at sizing factor {@code current}, keeping where they draw, so the editor can
+     * work in plain GUI pixels.
+     */
+    public void rebaseOffsets(float current) {
+        float ratio = offsetScale(current);
+        if (ratio != 1f) {
+            for (ElementLayout l : elements.values()) {
+                l.dx = Math.round(l.dx * ratio);
+                l.dy = Math.round(l.dy * ratio);
+            }
+        }
+        offsetFactor = current;
     }
 
     /**
@@ -72,8 +108,21 @@ public final class Layout {
     public Layout clamp() {
         if (elements == null) elements = new LinkedHashMap<>();
         if (sizing == null) sizing = Sizing.GUI_SCALE;
+        if (!(offsetFactor >= 0.05f && offsetFactor <= 20f)) offsetFactor = 0;
         font = HudFonts.cleanId(font);
         if (HudFonts.DEFAULT_FONT.equals(font)) font = null;
+        frame = HudFrames.cleanId(frame);
+        if (HudFrames.NONE.equals(frame)) frame = null;
+        screenArt = HudScreenArt.cleanPack(screenArt);
+        if (HudScreenArt.TOP.equals(screenArt)) screenArt = null;
+        Map<String, String> screens = new LinkedHashMap<>();
+        if (screenArtFor != null) {
+            for (String screen : HudScreenArt.SCREENS) {
+                String pack = HudScreenArt.cleanPack(screenArtFor.get(screen));
+                if (pack != null) screens.put(screen, pack);
+            }
+        }
+        screenArtFor = screens;
         Map<String, ElementLayout> kept = new LinkedHashMap<>();
         for (Element element : Element.values()) {
             ElementLayout l = elements.get(element.name());

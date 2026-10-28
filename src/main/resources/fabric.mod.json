@@ -3,11 +3,12 @@
 	"id": "huddable",
 	"version": "${version}",
 	"name": "Huddable",
-	"description": "Move, scale, hide and restyle the vanilla HUD in game. Drag health, hunger, the hotbar, the scoreboard and more where you want them, switch layout profiles, and share layouts as codes. Client-side; works on any server.",
+	"description": "Move, scale and hide every part of your HUD in an in-game editor. Works with vanilla elements and other mods' HUDs, with layout profiles you can share as codes.",
 	"authors": [
 		"Tad"
 	],
 	"license": "GPL-3.0-only",
+	"icon": "assets/huddable/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [

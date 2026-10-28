@@ -20,6 +20,11 @@ public interface HudPart {
     /** True for the status bars, which have {@link Style}s besides vanilla. */
     boolean restyleable();
 
+    /** True when a frame can be drawn around this element ({@link HudFrames}). */
+    default boolean frameable() {
+        return true;
+    }
+
     /** Where the element draws now, for a screen of {@code w} x {@code h} GUI pixels. */
     Geometry geometry(Minecraft mc, int w, int h);
 

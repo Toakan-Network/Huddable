@@ -39,6 +39,14 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   mixin (`mixin.meowdding`, applied only with meowdding-lib loaded) moves its draw call inside meowdding's
   overlay loop. General Settings has an Advanced toggle to turn it off.
 - 0.4.1: overlays switched off in their own mod aren't listed in the editor (they showed as empty boxes).
+- 0.5.0: frames. A profile frame and per-element frames (or None): vanilla tooltip / popup / button art from the
+  top pack or a chosen enabled pack (`PackFrames`, shared with Shopping List), drawn around what each element draws
+  (framed vanilla elements and mod layers are measured four times a second), at screen size. API `frameInset` /
+  `drawFrame` for elements drawn from `placement` (Shopping List uses them); `push` draws the frame itself.
+- 0.6.0: container screen art. The background picture of each vanilla container screen comes from a chosen enabled
+  pack, for all screens or per screen (`ContainerArtMixin` swaps the texture id in `GuiGraphicsExtractor.innerBlit`;
+  art loaded through `PackFrames.packTexture`).
+- 0.6.1: closed chat can be framed, around the messages it shows (measured like other framed elements).
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
@@ -64,6 +72,13 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   (RPG overlay, text overlays, alignment END/CENTER), moving, scaling and hiding them, the profile screen scale,
   the Advanced toggle off and on, and meowdding's own editor still working alongside. 0.4.1: an overlay
   switched off in SkyCubed leaves the list and comes back, at its saved position, when switched on.
+
+- 0.5.0: frames in game: each kind from the top pack and from a lower pack (HD packs too), vanilla elements
+  appearing and disappearing (boss bar, title, effects) with their frame, Skyblocker layers and SkyCubed overlays
+  framed, Shopping List's panels taking the frame, share codes keeping frames, a disabled pack falling back.
+
+- 0.6.0: container art in game: the inventory and chests (SkyBlock menus) from a lower pack, HD packs lining up
+  with slots, a per-screen choice over All screens, a disabled pack falling back, share codes keeping it.
 
 ## Next (ElvUI direction)
 - Shopping List on Huddable: register its five panels through the API (resizable), hand its Move HUD to

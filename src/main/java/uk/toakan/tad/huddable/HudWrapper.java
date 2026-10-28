@@ -6,9 +6,14 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Player;
 import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
+import uk.toakan.tad.huddable.api.HuddableApi;
+
+import java.util.EnumMap;
+import java.util.Map;
 
 /**
  * Wraps every {@link Element} through Fabric's {@link HudElementRegistry#replaceElement}, so vanilla (and any mod
@@ -37,7 +42,13 @@ public final class HudWrapper {
         float scale = scale(element, layout);
         // Chat's font goes into its line styles instead (ChatComponentMixin).
         Font font = element == Element.CHAT ? null : HudFonts.wrapped(element, Profiles.current());
-        if (element == Element.CHAT || layout.isDefault() && scale == 1f && font == null) {
+        HudFrames.Choice frame = HudFrames.resolve(element, Profiles.current());
+        if (element == Element.CHAT || layout.isDefault() && scale == 1f && font == null && frame == null) {
+            if (element == Element.CHAT && frame != null) {
+                // Measured with ChatComponentMixin's move already applied, so the box is where chat draws now.
+                HuddableApi.Box drawn = drawnBox(element, original, delta, null);
+                if (drawn != null) HudFrames.drawAround(graphics, frame, drawn.x(), drawn.y(), drawn.width(), drawn.height());
+            }
             original.extractRenderState(graphics, delta);
             return;
         }
@@ -47,14 +58,43 @@ public final class HudWrapper {
         pose.pushMatrix();
         transform(pose, anchor[0], anchor[1], layout, scale);
         if (layout.style == Style.VANILLA) {
+            if (frame != null) {
+                // Around what vanilla draws now (a boss bar or title may be gone, a scoreboard may have grown).
+                HuddableApi.Box drawn = drawnBox(element, original, delta, font);
+                if (drawn != null) HudFrames.drawAround(graphics, frame, drawn.x(), drawn.y(), drawn.width(), drawn.height());
+            }
             drawInFont(font, () -> original.extractRenderState(graphics, delta));
         } else if (mc.getCameraEntity() instanceof Player player) {
             BarRenderers.Reading reading = BarRenderers.read(element, player);
             if (reading != null) {
-                BarRenderers.draw(graphics, font != null ? font : mc.font, element, layout, anchor[0], anchor[1], reading);
+                Font barFont = font != null ? font : mc.font;
+                if (frame != null) {
+                    int[] size = BarRenderers.size(element, layout, barFont, reading);
+                    int x = element.rightAligned ? anchor[0] - size[0] : anchor[0];
+                    HudFrames.drawAround(graphics, frame, x, anchor[1] - size[1], size[0], size[1]);
+                }
+                BarRenderers.draw(graphics, barFont, element, layout, anchor[0], anchor[1], reading);
             }
         }
         pose.popMatrix();
+    }
+
+    /** A framed vanilla element's last measured box: unmoved, null while it draws nothing. */
+    private record Drawn(HuddableApi.Box box, long at) {}
+
+    private static final Map<Element, Drawn> DRAWN = new EnumMap<>(Element.class);
+
+    /** Where a framed vanilla element drew, measured at most four times a second (it is drawn once more to find out). */
+    private static HuddableApi.Box drawnBox(Element element, HudElement original, DeltaTracker delta, Font font) {
+        long now = Util.getMillis();
+        Drawn last = DRAWN.get(element);
+        if (last == null || now - last.at() >= ExternalPart.FRAME_MILLIS) {
+            HuddableApi.Box[] box = new HuddableApi.Box[1];
+            drawInFont(font, () -> box[0] = ExternalPart.measure(original, delta, element));
+            last = new Drawn(box[0], now);
+            DRAWN.put(element, last);
+        }
+        return last.box();
     }
 
     /** Runs vanilla's drawing with {@code font} (null = vanilla's) in place of the game font ({@code HudFontMixin}). */
@@ -74,10 +114,13 @@ public final class HudWrapper {
     /** Another mod's Fabric HUD layer ({@link HudDiscovery}): moved and scaled around its measured anchor. */
     static void renderExternal(ExternalPart part, HudElement original, GuiGraphicsExtractor graphics, DeltaTracker delta) {
         ElementLayout layout = Profiles.current().get(part);
-        part.measureIfNeeded(graphics, delta, !layout.isDefault());
+        HudFrames.Choice frame = layout.hidden ? null : HudFrames.resolve(part, Profiles.current());
+        part.measureIfNeeded(graphics, delta, !layout.isDefault(), frame != null);
         if (layout.hidden) return;
         float scale = scale(part, layout);
+        HuddableApi.Box drawn = frame != null ? part.drawnBox() : null;
         if (layout.dx == 0 && layout.dy == 0 && scale == 1f) {
+            if (drawn != null) HudFrames.drawAround(graphics, frame, drawn.x(), drawn.y(), drawn.width(), drawn.height());
             original.extractRenderState(graphics, delta);
             return;
         }
@@ -85,6 +128,7 @@ public final class HudWrapper {
         Matrix3x2fStack pose = graphics.pose();
         pose.pushMatrix();
         transform(pose, anchor[0], anchor[1], layout, scale);
+        if (drawn != null) HudFrames.drawAround(graphics, frame, drawn.x(), drawn.y(), drawn.width(), drawn.height());
         original.extractRenderState(graphics, delta);
         pose.popMatrix();
     }
@@ -94,9 +138,20 @@ public final class HudWrapper {
         return part.baseScale() * layout.scaleFactor() * Profiles.current().sizing.factor();
     }
 
+    /**
+     * What offsets are multiplied by: Window and Fixed sizing move elements as well as sizing them, so a layout
+     * keeps its shape when the window or GUI Scale changes.
+     */
+    public static float offsetScale() {
+        Layout layout = Profiles.current();
+        if (layout.offsetFactor <= 0) Profiles.recordOffsetFactor(layout);
+        return layout.offsetScale(layout.sizing.factor());
+    }
+
     /** Moves the anchor by the layout's offset and scales around it. */
     public static void transform(Matrix3x2f pose, int anchorX, int anchorY, ElementLayout layout, float scale) {
-        pose.translate(anchorX + layout.dx, anchorY + layout.dy);
+        float offsetScale = offsetScale();
+        pose.translate(anchorX + layout.dx * offsetScale, anchorY + layout.dy * offsetScale);
         pose.scale(scale, scale);
         pose.translate(-anchorX, -anchorY);
     }
@@ -121,8 +176,9 @@ public final class HudWrapper {
             height = size[1];
         }
         float scale = scale(part, layout);
-        int left = Math.round(g.anchorX() + layout.dx + (x - g.anchorX()) * scale);
-        int top = Math.round(g.anchorY() + layout.dy + (y - g.anchorY()) * scale);
+        float offsetScale = offsetScale();
+        int left = Math.round(g.anchorX() + layout.dx * offsetScale + (x - g.anchorX()) * scale);
+        int top = Math.round(g.anchorY() + layout.dy * offsetScale + (y - g.anchorY()) * scale);
         return new Box(left, top, Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
     }
 }

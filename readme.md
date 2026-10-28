@@ -28,8 +28,15 @@ whatever you're placing; it stays where you left it until the game closes.
   - **GUI** (default): follows Minecraft's GUI Scale, like vanilla.
   - **Window:** grows and shrinks with the window height.
   - **Fixed:** the same size on screen at any GUI Scale.
+
+  With Window and Fixed, positions move with the size too, so the layout keeps its shape when the window or GUI
+  Scale changes. Switching mode in the editor keeps elements where they are and only changes their size.
 - **Font:** the profile's font, picked from every font your resource packs provide (each shown in itself).
   Every element that draws text uses it unless you give that element its own (see Fonts below).
+- **Frame:** the profile's frame, drawn around every element unless you give that element its own or None (see
+  Frames below).
+- **Screens:** which resource pack's art the inventory, chests and other container screens use (see Container
+  screens below).
 - **Move:** drag an element. It snaps to the screen edges and centre and to other elements' edges and centres
   (cyan guide lines); hold Shift to place it freely.
 - **Scale:** drag one of an element's gold corner handles (25% to 400%). The element keeps its shape.
@@ -44,6 +51,7 @@ whatever you're placing; it stays where you left it until the game closes.
   - Colour (for the non-vanilla styles).
   - Bar width, height and text (Bar style).
   - Font, for elements that draw text: Profile (the profile's font), Vanilla, or any pack font.
+  - Frame: Profile (the profile's frame), None, or any frame from the list.
   - Reset element.
 - **Done** saves, **Cancel** or Esc drops your changes.
 
@@ -89,6 +97,38 @@ and share codes keep the font for players who have the pack.
 Chat in a new font re-wraps its lines to fit. Toasts drawn by another mod (Fancy Notify, for example) keep that
 mod's font; vanilla's toasts change.
 
+### Frames
+A frame is Minecraft's own tooltip, popup or button art drawn around an element, so a resource pack that decorates
+those (corner pieces, patterned edges) decorates your HUD too. The list has each kind from the top pack (what the
+rest of the game shows), then from every enabled pack that has its own art, for example "Tooltip (Faithful 64x)".
+To use one pack's frame without its other textures, enable it and move it to the bottom of the pack list. Pick a
+frame for the whole profile with the toolbar's **Frame** button, or per element in its options; an element set to
+None has no frame even when the profile has one.
+
+Frames follow what each element draws: a boss bar, title or other mod's layer that isn't showing has no frame, and
+one that grows (the scoreboard, a mod's list) has its frame grow with it, checked four times a second for framed
+elements only. Frame art is drawn at screen size, so frames match across elements of any scale. Closed chat is
+framed around the messages showing, so its frame goes when they fade; the open chat (T) has none. Toasts and the
+crosshair have no frame; full-screen mod layers get none either. If a frame's pack is turned off, the top
+pack's art is drawn until it's back, and share codes keep the choice for players who have the pack.
+
+Shopping List's panels use a Huddable frame in place of their own when one is set for them (it keeps its own look
+otherwise). Other mods can do the same through the API (`frameInset`, `drawFrame`).
+
+### Container screens
+Each container screen (inventory, chest, furnace, anvil and the rest) is one picture with the slots painted in,
+and normally the top resource pack's picture is shown. The toolbar's **Screens** list picks another enabled pack's
+picture instead: **All screens** for every screen, then a row for each screen that more than one of your packs
+has art for, to give it its own choice (Profile follows All screens). Click a row for the next pack. For example,
+keep a texture pack on top but use Faithful's inventory. Open a screen after Done to see it.
+
+- Server menus such as Hypixel's are chests, so they follow the Chest choice.
+- Only the background picture changes. Small pieces drawn over it (the furnace's flame and arrow, the recipe book
+  button) still come from the top pack.
+- Art drawn by other mods (tabs and side panels around the inventory) isn't changed.
+- A screen the chosen pack has no art for, or a pack you've turned off, shows the top pack's picture. Share codes
+  keep the choice.
+
 ### Styles
 - **Bar:** a filled bar with the value written on it. Health shows absorption and hunger shows saturation as a
   thin strip along the top.
@@ -117,7 +157,8 @@ The top button in the editor's window shows the active profile; click it to swit
 - **Delete:** press twice.
 - **Export:** copies the layout to the clipboard as a code starting `HUD1:`.
 - **Import:** reads a code from the clipboard into a new profile.
-- **Reset:** puts every element, the Size mode and the profile font back to vanilla.
+- **Reset:** puts every element, the Size mode, the profile font and frame, and the container screens back to
+  vanilla.
 
 Profile actions save your current edits first. Profiles are in `config/huddable/profiles/`.
 
@@ -151,7 +192,8 @@ public final class HuddableCompat implements HuddablePlugin {
         HuddableApi.register(PANEL, Component.literal("Example panel"),
             HuddableApi.Spec.of((screenWidth, screenHeight) -> new HuddableApi.Box(10, 10, 120, 40))
                 .withBaseScale(() -> MyHud.scale())  // optional: your own HUD scale
-                .resizable(60, 20));                  // optional: edge grips, with a minimum size
+                .resizable(60, 20)                    // optional: edge grips, with a minimum size
+                .listedWhen(() -> MyHud.enabled()));  // optional: left out of the editor while switched off
         // If the element is also a Fabric HUD layer, keep Huddable from wrapping that layer as well:
         // HuddableApi.ignoreLayer(MY_FABRIC_LAYER_ID);
     }

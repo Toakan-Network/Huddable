@@ -77,6 +77,12 @@ public final class Profiles {
         JsonFiles.writeAsync(file(activeName), () -> snapshot);
     }
 
+    /** Records the sizing factor a layout from before offsets followed it was placed at: the one it draws at now. */
+    static void recordOffsetFactor(Layout layout) {
+        layout.offsetFactor = layout.sizing.factor();
+        if (layout == active) saveActive(active);
+    }
+
     public static void switchTo(String name) {
         // A save of that profile may still be queued (switching away and straight back); read what it wrote.
         JsonFiles.flush();
