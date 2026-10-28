@@ -35,6 +35,8 @@ whatever you're placing; it stays where you left it until the game closes.
   Every element that draws text uses it unless you give that element its own (see Fonts below).
 - **Frame:** the profile's frame, drawn around every element unless you give that element its own or None (see
   Frames below).
+- **Screens:** which resource pack's art the inventory, chests and other container screens use (see Container
+  screens below).
 - **Move:** drag an element. It snaps to the screen edges and centre and to other elements' edges and centres
   (cyan guide lines); hold Shift to place it freely.
 - **Scale:** drag one of an element's gold corner handles (25% to 400%). The element keeps its shape.
@@ -112,6 +114,20 @@ pack's art is drawn until it's back, and share codes keep the choice for players
 Shopping List's panels use a Huddable frame in place of their own when one is set for them (it keeps its own look
 otherwise). Other mods can do the same through the API (`frameInset`, `drawFrame`).
 
+### Container screens
+Each container screen (inventory, chest, furnace, anvil and the rest) is one picture with the slots painted in,
+and normally the top resource pack's picture is shown. The toolbar's **Screens** list picks another enabled pack's
+picture instead: **All screens** for every screen, then a row for each screen that more than one of your packs
+has art for, to give it its own choice (Profile follows All screens). Click a row for the next pack. For example,
+keep a texture pack on top but use Faithful's inventory. Open a screen after Done to see it.
+
+- Server menus such as Hypixel's are chests, so they follow the Chest choice.
+- Only the background picture changes. Small pieces drawn over it (the furnace's flame and arrow, the recipe book
+  button) still come from the top pack.
+- Art drawn by other mods (tabs and side panels around the inventory) isn't changed.
+- A screen the chosen pack has no art for, or a pack you've turned off, shows the top pack's picture. Share codes
+  keep the choice.
+
 ### Styles
 - **Bar:** a filled bar with the value written on it. Health shows absorption and hunger shows saturation as a
   thin strip along the top.
@@ -140,7 +156,8 @@ The top button in the editor's window shows the active profile; click it to swit
 - **Delete:** press twice.
 - **Export:** copies the layout to the clipboard as a code starting `HUD1:`.
 - **Import:** reads a code from the clipboard into a new profile.
-- **Reset:** puts every element, the Size mode and the profile font back to vanilla.
+- **Reset:** puts every element, the Size mode, the profile font and frame, and the container screens back to
+  vanilla.
 
 Profile actions save your current edits first. Profiles are in `config/huddable/profiles/`.
 

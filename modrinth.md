@@ -13,6 +13,7 @@ Rearrange the vanilla HUD in game, no resource packs needed.
   per element, with a font quality setting
 - Frame any element with your resource packs' tooltip, popup or button art, from the top pack or any enabled
   pack, per profile or per element
+- Pick which resource pack's inventory, chest and other container art you see, for all screens or one by one
 - Named layout profiles, shared as copy-paste codes
 - Client-side, works on any server
 

@@ -43,6 +43,9 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
   top pack or a chosen enabled pack (`PackFrames`, shared with Shopping List), drawn around what each element draws
   (framed vanilla elements and mod layers are measured four times a second), at screen size. API `frameInset` /
   `drawFrame` for elements drawn from `placement` (Shopping List uses them); `push` draws the frame itself.
+- 0.6.0: container screen art. The background picture of each vanilla container screen comes from a chosen enabled
+  pack, for all screens or per screen (`ContainerArtMixin` swaps the texture id in `GuiGraphicsExtractor.innerBlit`;
+  art loaded through `PackFrames.packTexture`).
 
 ## Untested in game
 - The whole editor: dragging, snapping, scaling, the options panel, and the profile buttons.
@@ -72,6 +75,9 @@ in game. v1 is the base: wrapping and moving the vanilla elements.
 - 0.5.0: frames in game: each kind from the top pack and from a lower pack (HD packs too), vanilla elements
   appearing and disappearing (boss bar, title, effects) with their frame, Skyblocker layers and SkyCubed overlays
   framed, Shopping List's panels taking the frame, share codes keeping frames, a disabled pack falling back.
+
+- 0.6.0: container art in game: the inventory and chests (SkyBlock menus) from a lower pack, HD packs lining up
+  with slots, a per-screen choice over All screens, a disabled pack falling back, share codes keeping it.
 
 ## Next (ElvUI direction)
 - Shopping List on Huddable: register its five panels through the API (resizable), hand its Move HUD to

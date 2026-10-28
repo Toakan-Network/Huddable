@@ -40,7 +40,7 @@ public class LayoutEditorScreen extends Screen {
     private static final int TOOLBAR_WIDTH = 72;
     /** Title strip at the top of the controls; drag it to move them. */
     private static final int GRIP = 12;
-    private static final int TOOLBAR_BUTTONS = 13;
+    private static final int TOOLBAR_BUTTONS = 14;
     private static final int TOOLBAR_HEIGHT = GRIP + TOOLBAR_BUTTONS * 22 + 2;
     private static final int HANDLE = 6;
     private static final int PANEL_WIDTH = 130;
@@ -83,6 +83,9 @@ public class LayoutEditorScreen extends Screen {
     private boolean pickingFrame;
     private HudPart frameTarget;
     private int framePage;
+    /** The container screens list: which pack each screen's picture comes from. */
+    private boolean pickingScreens;
+    private int screensPage;
     /** Where the controls were left, kept while the game runs; -1 = default (left edge, halfway down). */
     private static int toolbarX = -1;
     private static int toolbarY = -1;
@@ -112,6 +115,7 @@ public class LayoutEditorScreen extends Screen {
         selected = null;
         pickingFont = false;
         pickingFrame = false;
+        pickingScreens = false;
     }
 
     // ---- Widgets ----
@@ -146,6 +150,7 @@ public class LayoutEditorScreen extends Screen {
             showList = !showList;
             pickingFont = false;
             pickingFrame = false;
+            pickingScreens = false;
             selected = null;
             rebuildWidgets();
         });
@@ -157,6 +162,7 @@ public class LayoutEditorScreen extends Screen {
             openFontList(null);
             pickingFont = !open;
             pickingFrame = false;
+            pickingScreens = false;
             rebuildWidgets();
         });
         y = toolbarButton(x, y, I18n.get("huddable.editor.frame"),
@@ -167,6 +173,17 @@ public class LayoutEditorScreen extends Screen {
             pickingFont = false;
             openFrameList(null);
             pickingFrame = !open;
+            pickingScreens = false;
+            rebuildWidgets();
+        });
+        y = toolbarButton(x, y, I18n.get("huddable.editor.screens"), I18n.get("huddable.editor.screens.tooltip"), () -> {
+            boolean open = pickingScreens;
+            showList = false;
+            selected = null;
+            pickingFont = false;
+            pickingFrame = false;
+            pickingScreens = !open;
+            screensPage = 0;
             rebuildWidgets();
         });
         y = toolbarButton(x, y, I18n.get("huddable.editor.size", working.sizing.label()),
@@ -189,6 +206,7 @@ public class LayoutEditorScreen extends Screen {
         if (showList) buildList();
         else if (pickingFont) buildFontList();
         else if (pickingFrame) buildFrameList();
+        else if (pickingScreens) buildScreensList();
         else if (selected != null) buildPanel();
     }
 
@@ -441,6 +459,75 @@ public class LayoutEditorScreen extends Screen {
         working.edit(frameTarget).frame = id;
     }
 
+    /**
+     * Container screens, a page at a time: first every screen's pack, then each screen that more than one enabled
+     * pack has a picture for (or that has a choice of its own). Clicking a row moves to the next pack.
+     */
+    private void buildScreensList() {
+        placePanel(FONT_PANEL_WIDTH);
+        int x = panelX + 4;
+        int w = FONT_PANEL_WIDTH - 8;
+        List<String> rows = new ArrayList<>();
+        rows.add(null);
+        for (String screen : HudScreenArt.SCREENS) {
+            if (HudScreenArt.packsWith(screen).size() > 1 || working.screenArtFor.containsKey(screen)) rows.add(screen);
+        }
+        int perPage = Math.max(1, (height - panelY - 16 - 2 * ROW - 2) / ROW);
+        int pages = (rows.size() + perPage - 1) / perPage;
+        screensPage = Math.clamp(screensPage, 0, pages - 1);
+        int y = panelY + 16;
+        for (int i = screensPage * perPage; i < Math.min(rows.size(), (screensPage + 1) * perPage); i++) {
+            String screen = rows.get(i);
+            String pack = screen == null ? working.screenArt : working.screenArtFor.get(screen);
+            String packName = screen != null && pack == null ? I18n.get("huddable.editor.screens.profile")
+                : HudScreenArt.packName(pack);
+            String label = I18n.get("huddable.editor.screens.row",
+                screen == null ? I18n.get("huddable.editor.screens.all") : HudScreenArt.name(screen), packName);
+            String tip = pack != null && !HudScreenArt.TOP.equals(pack) && !PackFrames.enabled(pack)
+                ? I18n.get("huddable.editor.screens.pack_off", PackFrames.title(pack))
+                : I18n.get(screen == null ? "huddable.editor.screens.all.tooltip" : "huddable.editor.screens.screen.tooltip");
+            addRenderableWidget(Button.builder(Component.literal(font.plainSubstrByWidth(label, w - 8)), b -> {
+                nextScreenPack(screen);
+                rebuildWidgets();
+            }).tooltip(Tooltip.create(Component.literal(tip))).bounds(x, y, w, 20).build());
+            y += ROW;
+        }
+        if (pages > 1) {
+            addRenderableWidget(Button.builder(Component.literal("<"), b -> {
+                screensPage--;
+                rebuildWidgets();
+            }).bounds(x, y, 20, 20).build()).active = screensPage > 0;
+            addRenderableWidget(Button.builder(Component.literal(">"), b -> {
+                screensPage++;
+                rebuildWidgets();
+            }).bounds(x + w - 20, y, 20, 20).build()).active = screensPage < pages - 1;
+            y += ROW;
+        }
+        y = panelButton(x, y, w, I18n.get("huddable.editor.close"), () -> pickingScreens = false);
+        panelHeight = y - panelY + 2;
+    }
+
+    /**
+     * Moves {@code screen} (null = every screen) to the next pack: the top pack, then each enabled pack that has its
+     * picture; a single screen starts with the profile's choice.
+     */
+    private void nextScreenPack(String screen) {
+        List<String> choices = new ArrayList<>();
+        if (screen == null) {
+            choices.add(null);
+            choices.addAll(HudScreenArt.packsWithAny());
+        } else {
+            choices.add(null);
+            choices.add(HudScreenArt.TOP);
+            choices.addAll(HudScreenArt.packsWith(screen));
+        }
+        String current = screen == null ? working.screenArt : working.screenArtFor.get(screen);
+        String next = choices.get((choices.indexOf(current) + 1) % choices.size());
+        if (screen == null) working.screenArt = next;
+        else if (next == null) working.screenArtFor.remove(screen);
+        else working.screenArtFor.put(screen, next);
+    }
+
     /** A full-width panel button; the panel is rebuilt after it runs, so labels show the new value. */
     private int panelButton(int x, int y, int w, String label, Runnable action) {
         addRenderableWidget(Button.builder(Component.literal(label), b -> {
@@ -532,9 +619,12 @@ public class LayoutEditorScreen extends Screen {
         working.offsetFactor = working.sizing.factor();
         working.font = null;
         working.frame = null;
+        working.screenArt = null;
+        working.screenArtFor.clear();
         selected = null;
         pickingFont = false;
         pickingFrame = false;
+        pickingScreens = false;
         rebuildWidgets();
     }
 
@@ -624,6 +714,10 @@ public class LayoutEditorScreen extends Screen {
             String title = frameTarget != null ? I18n.get("huddable.editor.panel.frame", frameTarget.label())
                 : I18n.get("huddable.editor.frame.profile_title");
             context.text(font, font.plainSubstrByWidth(title, panelWidth - 8), panelX + 4, panelY + 4, GOLD, false);
+        } else if (pickingScreens) {
+            context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
+            context.outline(panelX, panelY, panelWidth, panelHeight, HEADER_BORDER);
+            context.text(font, Component.translatable("huddable.editor.screens.title"), panelX + 4, panelY + 4, GOLD, false);
         } else if (selected != null) {
             ElementLayout l = working.get(selected);
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, PANEL_BG);
@@ -704,7 +798,7 @@ public class LayoutEditorScreen extends Screen {
     }
 
     private boolean inPanel(int mouseX, int mouseY) {
-        return (showList || pickingFont || pickingFrame || selected != null) && mouseX >= panelX && mouseX < panelX + panelWidth
+        return (showList || pickingFont || pickingFrame || pickingScreens || selected != null) && mouseX >= panelX && mouseX < panelX + panelWidth
             && mouseY >= panelY && mouseY < panelY + panelHeight;
     }
 
@@ -727,6 +821,7 @@ public class LayoutEditorScreen extends Screen {
             if (element != null) showList = false;
             pickingFont = false;
             pickingFrame = false;
+            pickingScreens = false;
             selected = element;
             rebuildWidgets();
             return true;
@@ -736,6 +831,7 @@ public class LayoutEditorScreen extends Screen {
             selected = element;
             pickingFont = false;
             pickingFrame = false;
+            pickingScreens = false;
             rebuildWidgets();
         }
         if (!element.movable()) return true;
